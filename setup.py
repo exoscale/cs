@@ -10,7 +10,7 @@ setup(
     url='https://github.com/exoscale/cs',
     license='BSD',
     author=u'Bruno Renié',
-    description=('A simple yet powerful CloudStack API client usable for '
+    description=('A simple yet powerful CloudStack API client for '
                  'Python and the command-line.'),
     long_description=long_description,
     py_modules=('cs',),
