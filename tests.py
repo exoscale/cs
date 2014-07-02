@@ -74,10 +74,10 @@ class RequestTest(TestCase):
         cs = CloudStack(endpoint='localhost', key='foo', secret='bar')
         get.return_value.status_code = 200
         get.return_value.json.return_value = {
-            'listvirtualmachinesresponse': [],
+            'listvirtualmachinesresponse': {},
         }
         machines = cs.listVirtualMachines(listall='true')
-        self.assertEqual(machines, [])
+        self.assertEqual(machines, {})
         get.assert_called_once_with('localhost', timeout=10, params={
             'apiKey': 'foo',
             'response': 'json',

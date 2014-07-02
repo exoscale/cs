@@ -28,6 +28,14 @@ except ImportError:
     pygments = None
 
 
+def cs_encode(value):
+    """
+    Try to behave like cloudstack, which uses
+    java.net.URLEncoder.encode(stuff).replace('+', '%20').
+    """
+    return quote(value, safe=".-*_")
+
+
 class CloudStackException(Exception):
     pass
 
@@ -81,11 +89,11 @@ class CloudStack(object):
             if isinstance(values, (list, tuple, set)):
                 for value in values:
                     params.append("=".join(
-                        (key, quote(value).replace('/', '%2f'))
+                        (key, cs_encode(value))
                     ).lower())
             else:
                 params.append("=".join(
-                    (key, quote(values).replace('/', '%2f'))
+                    (key, cs_encode(values))
                 ).lower())
 
         params = "&".join(sorted(params))
