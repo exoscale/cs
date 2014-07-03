@@ -28,11 +28,23 @@ except ImportError:
     pygments = None
 
 
+PY2 = sys.version_info < (3, 0)
+
+if PY2:
+    text_type = unicode  # noqa
+else:
+    text_type = str
+
+
 def cs_encode(value):
     """
     Try to behave like cloudstack, which uses
     java.net.URLEncoder.encode(stuff).replace('+', '%20').
     """
+    if isinstance(value, int):
+        value = str(value)
+    elif PY2 and isinstance(value, text_type):
+        value = value.encode('utf-8')
     return quote(value, safe=".-*_")
 
 
@@ -66,6 +78,8 @@ class CloudStack(object):
         })
         if json:
             kwargs['response'] = 'json'
+        if 'page' in kwargs:
+            kwargs.setdefault('pagesize', 500)
 
         kwargs['signature'] = self._sign(kwargs)
         response = requests.get(self.endpoint, params=kwargs,

@@ -1,3 +1,4 @@
+# coding: utf-8
 import os
 
 from contextlib import contextmanager
@@ -84,3 +85,19 @@ class RequestTest(TestCase):
             'command': 'listVirtualMachines',
             'listall': 'true',
             'signature': 'B0d6hBsZTcFVCiioSxzwKA9Pke8='})
+
+    @patch('requests.get')
+    def test_encoding(self, get):
+        cs = CloudStack(endpoint='localhost', key='foo', secret='bar')
+        get.return_value.status_code = 200
+        get.return_value.json.return_value = {
+            'listvirtualmachinesresponse': {},
+        }
+        cs.listVirtualMachines(listall=1, unicode_param=u'éèààû')
+        get.assert_called_once_with('localhost', timeout=10, params={
+            'apiKey': 'foo',
+            'response': 'json',
+            'command': 'listVirtualMachines',
+            'listall': 1,
+            'unicode_param': u'éèààû',
+            'signature': 'gABU/KFJKD3FLAgKDuxQoryu4sA='})
