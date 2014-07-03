@@ -89,7 +89,7 @@ class CloudStack(object):
         self.endpoint = endpoint
         self.key = key
         self.secret = secret
-        self.timeout = 10
+        self.timeout = timeout
 
     def __repr__(self):
         return '<CloudStack: {0}>'.format(self.endpoint)
