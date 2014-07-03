@@ -32,8 +32,12 @@ PY2 = sys.version_info < (3, 0)
 
 if PY2:
     text_type = unicode  # noqa
+    string_type = basestring  # noqa
+    integer_types = int, long  # noqa
 else:
     text_type = str
+    string_type = str
+    integer_types = int
 
 
 def cs_encode(value):
@@ -46,6 +50,30 @@ def cs_encode(value):
     elif PY2 and isinstance(value, text_type):
         value = value.encode('utf-8')
     return quote(value, safe=".-*_")
+
+
+def transform(params):
+    for key, value in list(params.items()):
+        if value is None:
+            params.pop(key)
+        if isinstance(value, string_type):
+            continue
+        elif isinstance(value, integer_types):
+            params[key] = text_type(value)
+        elif isinstance(value, (list, tuple, set)):
+            if not value:
+                params.pop(key)
+            else:
+                if not isinstance(value[0], dict):
+                    params[key] = ",".join(value)
+                else:
+                    params.pop(key)
+                    for index, val in enumerate(value):
+                        for k, v in val.items():
+                            params["%s[%d].%s" % (key, index, k)] = v
+        else:
+            raise ValueError(type(value))
+    return params
 
 
 class CloudStackException(Exception):
@@ -81,6 +109,7 @@ class CloudStack(object):
         if 'page' in kwargs:
             kwargs.setdefault('pagesize', 500)
 
+        kwargs = transform(kwargs)
         kwargs['signature'] = self._sign(kwargs)
         response = requests.get(self.endpoint, params=kwargs,
                                 timeout=self.timeout)
@@ -98,19 +127,10 @@ class CloudStack(object):
         Computes a signature string according to the CloudStack
         signature method (hmac/sha1).
         """
-        params = []
-        for key, values in data.items():
-            if isinstance(values, (list, tuple, set)):
-                for value in values:
-                    params.append("=".join(
-                        (key, cs_encode(value))
-                    ).lower())
-            else:
-                params.append("=".join(
-                    (key, cs_encode(values))
-                ).lower())
-
-        params = "&".join(sorted(params))
+        params = "&".join(sorted([
+            "=".join((key, cs_encode(value))).lower()
+            for key, value in data.items()
+        ]))
         digest = hmac.new(
             self.secret.encode('utf-8'),
             msg=params.encode('utf-8'),

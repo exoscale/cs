@@ -98,6 +98,25 @@ class RequestTest(TestCase):
             'apiKey': 'foo',
             'response': 'json',
             'command': 'listVirtualMachines',
-            'listall': 1,
+            'listall': '1',
             'unicode_param': u'éèààû',
             'signature': 'gABU/KFJKD3FLAgKDuxQoryu4sA='})
+
+    @patch("requests.get")
+    def test_transformt(self, get):
+        cs = CloudStack(endpoint='localhost', key='foo', secret='bar')
+        get.return_value.status_code = 200
+        get.return_value.json.return_value = {
+            'listvirtualmachinesresponse': {},
+        }
+        cs.listVirtualMachines(foo=["foo", "bar"],
+                               bar=[{'baz': 'blah', 'foo': 'meh'}])
+        get.assert_called_once_with('localhost', timeout=10, params={
+            'command': 'listVirtualMachines',
+            'response': 'json',
+            'bar[0].foo': 'meh',
+            'bar[0].baz': 'blah',
+            'foo': 'foo,bar',
+            'apiKey': 'foo',
+            'signature': 'UGUVEfCOfGfOlqoTj1D2m5adr2g=',
+        })
