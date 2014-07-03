@@ -72,14 +72,15 @@ class ConfigTest(TestCase):
 class RequestTest(TestCase):
     @patch('requests.get')
     def test_request_params(self, get):
-        cs = CloudStack(endpoint='localhost', key='foo', secret='bar')
+        cs = CloudStack(endpoint='localhost', key='foo', secret='bar',
+                        timeout=20)
         get.return_value.status_code = 200
         get.return_value.json.return_value = {
             'listvirtualmachinesresponse': {},
         }
         machines = cs.listVirtualMachines(listall='true')
         self.assertEqual(machines, {})
-        get.assert_called_once_with('localhost', timeout=10, params={
+        get.assert_called_once_with('localhost', timeout=20, params={
             'apiKey': 'foo',
             'response': 'json',
             'command': 'listVirtualMachines',
