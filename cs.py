@@ -56,6 +56,7 @@ def transform(params):
     for key, value in list(params.items()):
         if value is None:
             params.pop(key)
+            continue
         if isinstance(value, string_type):
             continue
         elif isinstance(value, integer_types):
