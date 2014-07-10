@@ -65,6 +65,8 @@ def transform(params):
             if not value:
                 params.pop(key)
             else:
+                if isinstance(value, set):
+                    value = list(value)
                 if not isinstance(value[0], dict):
                     params[key] = ",".join(value)
                 else:
@@ -150,7 +152,7 @@ def read_config():
                 for key in keys}
 
     # Config file: $PWD/cloudstack.ini or $HOME/.cloudstack.ini
-    # Last write wins in configparser
+    # Last read wins in configparser
     paths = (
         os.path.join(os.path.expanduser('~'), '.cloudstack.ini'),
         os.path.join(os.getcwd(), 'cloudstack.ini'),
