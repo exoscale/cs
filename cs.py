@@ -212,7 +212,7 @@ def main():
 
     data = json.dumps(response, indent=2, sort_keys=True)
 
-    if pygments:
+    if pygments and sys.stdout.isatty():
         data = pygments.highlight(data, JsonLexer(), TerminalFormatter())
     print(data)
 
