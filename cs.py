@@ -1,4 +1,5 @@
 #! /usr/bin/env python
+
 import base64
 import hashlib
 import hmac
@@ -195,10 +196,10 @@ def main():
         response = getattr(cs, command)(**kwargs)
     except CloudStackException as e:
         response = e.args[2]
-        print("Cloudstack error:")
+        sys.stderr.write("Cloudstack error:\n")
 
     if 'jobid' in response and 'async' not in flags:
-        print("Polling result... ^C to abort")
+        sys.stderr.write("Polling result... ^C to abort\n")
         while True:
             try:
                 res = cs.queryAsyncJobResult(**response)
@@ -207,14 +208,14 @@ def main():
                     break
                 time.sleep(3)
             except KeyboardInterrupt:
-                print("Result not ready yet.")
+                sys.stderr.write("Result not ready yet.\n")
                 break
 
     data = json.dumps(response, indent=2, sort_keys=True)
 
     if pygments:
         data = pygments.highlight(data, JsonLexer(), TerminalFormatter())
-    print(data)
+    sys.stdout.write(data)
 
 
 if __name__ == '__main__':
