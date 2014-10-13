@@ -198,7 +198,7 @@ def main():
         response = e.args[2]
         sys.stderr.write("Cloudstack error:\n")
 
-    if 'jobid' in response and 'async' not in flags:
+    if 'Async' not in command and 'jobid' in response and 'async' not in flags:
         sys.stderr.write("Polling result... ^C to abort\n")
         while True:
             try:
