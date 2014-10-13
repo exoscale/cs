@@ -176,10 +176,11 @@ def main():
     config = read_config()
     cs = CloudStack(**config)
 
+    usage = "Usage: {0} <command> [option1=value1 " \
+            "[option2=value2] ...] [--async]".format(sys.argv[0])
+
     if len(sys.argv) == 1:
-        raise SystemExit(
-            "Usage: {0} <command> [option1=value1 "
-            "[option2=value2] ...] [--async]".format(sys.argv[0]))
+        raise SystemExit(usage)
 
     command = sys.argv[1]
     kwargs = defaultdict(set)
@@ -188,6 +189,8 @@ def main():
         if option.startswith('--'):
             flags.append(option.strip('-'))
             continue
+        if '=' not in option:
+            raise SystemExit(usage)
 
         key, value = option.split('=', 1)
         kwargs[key].add(value.strip(" \"'"))
