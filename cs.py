@@ -119,6 +119,11 @@ class CloudStack(object):
                                 timeout=self.timeout)
         data = response.json()
         key = '{0}response'.format(command.lower())
+        # workaround for API inconsistencies: deleteisosresonse instead of
+        # deleteisoresponse
+        if key not in data:
+            key = '{0}sresponse'.format(command.lower())
+
         if response.status_code != 200:
             raise CloudStackException(
                 "HTTP {0} response from CloudStack".format(
