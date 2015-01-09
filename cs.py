@@ -89,11 +89,12 @@ class Unauthorized(CloudStackException):
 
 
 class CloudStack(object):
-    def __init__(self, endpoint, key, secret, timeout=10):
+    def __init__(self, endpoint, key, secret, timeout=10, method='get'):
         self.endpoint = endpoint
         self.key = key
         self.secret = secret
         self.timeout = timeout
+        self.method = method.lower()
 
     def __repr__(self):
         return '<CloudStack: {0}>'.format(self.endpoint)
@@ -115,8 +116,13 @@ class CloudStack(object):
 
         kwargs = transform(kwargs)
         kwargs['signature'] = self._sign(kwargs)
-        response = requests.get(self.endpoint, params=kwargs,
-                                timeout=self.timeout)
+
+        kw = {'timeout': self.timeout}
+        if self.method == 'get':
+            kw['params'] = kwargs
+        else:
+            kw['data'] = kwargs
+        response = getattr(requests, self.method)(self.endpoint, **kw)
         data = response.json()
         key = '{0}response'.format(command.lower())
         # workaround for API inconsistencies: deleteisosresonse instead of
@@ -149,7 +155,8 @@ class CloudStack(object):
 
 def read_config():
     # Try env vars first
-    keys = ['endpoint', 'key', 'secret']
+    os.environ.setdefault('CLOUDSTACK_METHOD', 'get')
+    keys = ['endpoint', 'key', 'secret', 'method']
     for key in keys:
         if 'CLOUDSTACK_{0}'.format(key.upper()) not in os.environ:
             break
@@ -179,20 +186,19 @@ def read_config():
 
 def main():
     config = read_config()
-    cs = CloudStack(**config)
 
     usage = "Usage: {0} <command> [option1=value1 " \
-            "[option2=value2] ...] [--async]".format(sys.argv[0])
+            "[option2=value2] ...] [--async] [--post]".format(sys.argv[0])
 
     if len(sys.argv) == 1:
         raise SystemExit(usage)
 
     command = sys.argv[1]
     kwargs = defaultdict(set)
-    flags = []
+    flags = set()
     for option in sys.argv[2:]:
         if option.startswith('--'):
-            flags.append(option.strip('-'))
+            flags.add(option.strip('-'))
             continue
         if '=' not in option:
             raise SystemExit(usage)
@@ -200,6 +206,9 @@ def main():
         key, value = option.split('=', 1)
         kwargs[key].add(value.strip(" \"'"))
 
+    if 'post' in flags:
+        config['method'] = 'post'
+    cs = CloudStack(**config)
     try:
         response = getattr(cs, command)(**kwargs)
     except CloudStackException as e:

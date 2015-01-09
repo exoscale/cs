@@ -64,8 +64,8 @@ polling, use the ``--async`` flag.
 
 Configuration is read from several locations, in the following order:
 
-* The ``CLOUDSTACK_ENDPOINT``, ``CLOUDSTACK_KEY`` and ``CLOUDSTACK_SECRET``
-  environment variables,
+* The ``CLOUDSTACK_ENDPOINT``, ``CLOUDSTACK_KEY``, ``CLOUDSTACK_SECRET`` and
+  ``CLOUDSTACK_METHOD`` environment variables,
 * A ``CLOUDSTACK_CONFIG`` environment variable pointing to an ``.ini`` file,
 * A ``cloudstack.ini`` file in the current working directory,
 * A ``.cloudstack.ini`` file in the home directory.
@@ -78,3 +78,8 @@ To use that configuration scheme from your Python code::
 
 Note that ``read_config()`` can raise ``SystemExit`` if no configuration is
 found.
+
+``CLOUDSTACK_METHOD`` or the ``method`` entry in the configuration file can be
+used to change the HTTP verb used to make CloudStack requests. By default,
+requests are made with the GET method but CloudStack supports POST requests.
+POST can be useful to overcome some length limits in the CloudStack API.

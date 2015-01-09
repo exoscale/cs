@@ -6,9 +6,9 @@ from functools import partial
 from unittest import TestCase
 
 try:
-    from unittest.mock import patch
+    from unittest.mock import patch, call
 except ImportError:
-    from mock import patch
+    from mock import patch, call
 
 from cs import read_config, CloudStack
 
@@ -50,6 +50,7 @@ class ConfigTest(TestCase):
                 'key': 'test key from env',
                 'secret': 'test secret from env',
                 'endpoint': 'https://api.example.com/from-env',
+                'method': 'get',
             })
 
     def test_current_dir_config(self):
@@ -121,3 +122,24 @@ class RequestTest(TestCase):
             'apiKey': 'foo',
             'signature': 'UGUVEfCOfGfOlqoTj1D2m5adr2g=',
         })
+
+    @patch("requests.post")
+    @patch("requests.get")
+    def test_method(self, get, post):
+        cs = CloudStack(endpoint='localhost', key='foo', secret='bar',
+                        method='post')
+        post.return_value.status_code = 200
+        post.return_value.json.return_value = {
+            'listvirtualmachinesresponse': {},
+        }
+        cs.listVirtualMachines(blah='brah')
+        self.assertEqual(get.call_args_list, [])
+        self.assertEqual(post.call_args_list, [
+            call('localhost', timeout=10, data={
+                'command': 'listVirtualMachines',
+                'blah': 'brah',
+                'apiKey': 'foo',
+                'response': 'json',
+                'signature': '58VvLSaVUqHnG9DhXNOAiDFwBoA=',
+            })]
+        )
