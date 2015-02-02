@@ -157,12 +157,14 @@ def read_config():
     # Try env vars first
     os.environ.setdefault('CLOUDSTACK_METHOD', 'get')
     keys = ['endpoint', 'key', 'secret', 'method']
+    env_conf = {}
     for key in keys:
         if 'CLOUDSTACK_{0}'.format(key.upper()) not in os.environ:
             break
+        else:
+            env_conf[key] = os.environ['CLOUDSTACK_{0}'.format(key.upper())]
     else:
-        return {key: os.environ['CLOUDSTACK_{0}'.format(key.upper())]
-                for key in keys}
+        return env_conf
 
     # Config file: $PWD/cloudstack.ini or $HOME/.cloudstack.ini
     # Last read wins in configparser
