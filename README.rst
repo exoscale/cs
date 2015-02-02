@@ -7,7 +7,7 @@ CS
 
 A simple, yet powerful CloudStack API client for python and the command-line.
 
-* Python 2.7+ and 3.3+ support.
+* Python 2.6+ and 3.3+ support.
 * All present and future CloudStack API calls and parameters are supported.
 * Syntax highlight in the command-line client if Pygments is installed.
 * BSD license.
