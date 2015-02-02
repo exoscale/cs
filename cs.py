@@ -214,6 +214,8 @@ def main():
     except CloudStackException as e:
         response = e.args[2]
         sys.stderr.write("Cloudstack error:\n")
+    except Exception, e:
+        raise SystemExit("Error: invalid response %s" % str(e))
 
     if 'Async' not in command and 'jobid' in response and 'async' not in flags:
         sys.stderr.write("Polling result... ^C to abort\n")
