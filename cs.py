@@ -41,6 +41,77 @@ else:
     integer_types = int
 
 
+# API inconsistencies
+response_key_overrides = {
+    'activateprojectresponse': 'activaterojectresponse',
+    'addnictovmresponse': 'addnictovirtualmachineresponse',
+    'assignvmresponse': 'assignvirtualmachineresponse',
+    'associateipaddrresponse': 'associateipaddressresponse',
+    'baselisttemplateorisopermissionsresponse': 'listtemplatepermissionsresponse',  # noqa
+    'cancelmaintenanceresponse': 'cancelhostmaintenanceresponse',
+    'cleanvmreservationsresponse': 'cleanvmreservationresponse',
+    'createapplicationloadbalancerresponse': 'createloadbalancerresponse',
+    'createautoscalepolicyresponse': 'autoscalepolicyresponse',
+    'createautoscalevmgroupresponse': 'autoscalevmgroupresponse',
+    'createautoscalevmprofileresponse': 'autoscalevmprofileresponse',
+    'createconditionresponse': 'conditionresponse',
+    'createcounterresponse': 'counterresponse',
+    'createlbstickinesspolicyresponse': 'createlbstickinesspolicy',
+    'createvmgroupresponse': 'createinstancegroupresponse',
+    'deleteapplicationloadbalancerresponse': 'deleteloadbalancerresponse',
+    'deleteiamgroupresponse': 'deleteaclgroupresponse',
+    'deleteisoresponse': 'deleteisosresponse',
+    'deletelbstickinesspolicyresponse': 'deletelbstickinessrruleresponse',
+    'deletepoolresponse': 'deletestoragepoolresponse',
+    'deleteportableiprangeresponse': 'deleteportablepublicipresponse',
+    'deletevmgroupresponse': 'deleteinstancegroupresponse',
+    'deployvmresponse': 'deployvirtualmachineresponse',
+    'destroyvmresponse': 'destroyvirtualmachineresponse',
+    'disassociateipaddrresponse': 'disassociateipaddressresponse',
+    'expungevmresponse': 'expungevirtualmachineresponse',
+    'getusagerecordsresponse': 'listusagerecordsresponse',
+    'getvmuserdataresponse': 'getvirtualmachineuserdataresponse',
+    'listapplicationloadbalancersresponse': 'listloadbalancerssresponse',
+    'listcfgsbyresponse': 'listconfigurationsresponse',
+    'listcountersresponse': 'counterresponse',
+    'listgloballoadbalancerruleresponse': 'listgloballoadbalancerrulesresponse',  # noqa
+    'listguestoscategoriesresponse': 'listoscategoriesresponse',
+    'listguestosresponse': 'listostypesresponse',
+    'listinternallbvmsresponse': 'listinternallbvmssresponse',
+    'listnetworkdeviceresponse': 'listnetworkdevice',
+    'listpodsbyresponse': 'listpodsresponse',
+    'listportableiprangesresponse': 'listportableipresponse',
+    'listsecondarystagingstoresresponse': 'listsecondarystagingstoreresponse',
+    'listvmgroupsresponse': 'listinstancegroupsresponse',
+    'listvmsresponse': 'listvirtualmachinesresponse',
+    'migratevmresponse': 'migratevirtualmachineresponse',
+    'prepareformaintenanceresponse': 'preparehostformaintenanceresponse',
+    'rebootvmresponse': 'rebootvirtualmachineresponse',
+    'recovervmresponse': 'recovervirtualmachineresponse',
+    'registerresponse': 'registeruserkeysresponse',
+    'removefromgloballoadbalancerruleresponse': 'removefromloadbalancerruleresponse',  # noqa
+    'removeipfromvmnicresponse': 'removeipfromnicresponse',
+    'removenicfromvmresponse': 'removenicfromvirtualmachineresponse',
+    'resetvmpasswordresponse': 'resetpasswordforvirtualmachineresponse',
+    'resetvmsshkeyresponse': 'resetsshkeyforvirtualmachineresponse',
+    'scalesystemvmresponse': 'changeserviceforsystemvmresponse',
+    'scalevmresponse': 'scalevirtualmachineresponse',
+    'startvmresponse': 'startvirtualmachineresponse',
+    'stopvmresponse': 'stopvirtualmachineresponse',
+    'updateapplicationloadbalancerresponse': 'updateloadbalancerresponse',
+    'updatecfgresponse': 'updateconfigurationresponse',
+    'updatedefaultnicforvmresponse': 'updatedefaultnicforvirtualmachineresponse',  # noqa
+    'updateipaddrresponse': 'updateipaddressresponse',
+    'updatenetworkaclitemresponse': 'createnetworkaclresponse',
+    'updatevmaffinitygroupresponse': 'updatevirtualmachineresponse',
+    'updatevmgroupresponse': 'updateinstancegroupresponse',
+    'updatevmresponse': 'updatevirtualmachineresponse',
+    'upgraderouterresponse': 'changeserviceforrouterresponse',
+    'upgradesystemvmresponse': 'changeserviceforsystemvmresponse',
+    'upgradevmresponse': 'changeserviceforvirtualmachineresponse',
+}
+
+
 def cs_encode(value):
     """
     Try to behave like cloudstack, which uses
@@ -125,10 +196,9 @@ class CloudStack(object):
         response = getattr(requests, self.method)(self.endpoint, **kw)
         data = response.json()
         key = '{0}response'.format(command.lower())
-        # workaround for API inconsistencies: deleteisosresonse instead of
-        # deleteisoresponse
-        if key not in data:
-            key = '{0}sresponse'.format(command.lower())
+        if key not in data and key in response_key_overrides:
+            key = response_key_overrides[key]
+            assert key in data, key
 
         if response.status_code != 200:
             raise CloudStackException(
