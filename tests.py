@@ -162,10 +162,10 @@ class RequestTest(TestCase):
     @patch("requests.get")
     def test_error(self, get):
         get.return_value.status_code = 530
-        get.return_value.json.return_value = {'errorcode': 530,
-                                              'uuidList': [],
-                                              'cserrorcode': 9999,
-                                              'errortext': 'Fail'}
+        get.return_value.json.return_value = {
+            'listvirtualmachinesresponse': {'errorcode': 530,
+                                            'uuidList': [],
+                                            'cserrorcode': 9999,
+                                            'errortext': 'Fail'}}
         cs = CloudStack(endpoint='localhost', key='foo', secret='bar')
-        with self.assertRaises(CloudStackException):
-            cs.listVirtualMachines()
+        self.assertRaises(CloudStackException, cs.listVirtualMachines)

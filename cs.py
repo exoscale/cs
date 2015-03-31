@@ -124,12 +124,13 @@ class CloudStack(object):
             kw['data'] = kwargs
         response = getattr(requests, self.method)(self.endpoint, **kw)
         data = response.json()
+        [key] = data.keys()
+        data = data[key]
         if response.status_code != 200:
             raise CloudStackException(
                 "HTTP {0} response from CloudStack".format(
                     response.status_code), response, data)
-        [key] = data.keys()
-        return data[key]
+        return data
 
     def _sign(self, data):
         """
