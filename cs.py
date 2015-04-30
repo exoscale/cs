@@ -169,7 +169,7 @@ def read_config():
     )
     # Look at CLOUDSTACK_CONFIG first if present
     if 'CLOUDSTACK_CONFIG' in os.environ:
-        paths += (os.environ['CLOUDSTACK_CONFIG'],)
+        paths += (os.path.expanduser(os.environ['CLOUDSTACK_CONFIG']),)
     if not any([os.path.exists(c) for c in paths]):
         raise SystemExit("Config file not found. Tried {0}".format(
             ", ".join(paths)))
