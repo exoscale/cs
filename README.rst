@@ -83,3 +83,7 @@ found.
 used to change the HTTP verb used to make CloudStack requests. By default,
 requests are made with the GET method but CloudStack supports POST requests.
 POST can be useful to overcome some length limits in the CloudStack API.
+
+``CLOUDSTACK_TIMEOUT`` or the ``timeout`` entry in the configuration file can
+be used to change the HTTP timeout when making CloudStack requests (in
+seconds). The default value is 10.

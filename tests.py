@@ -66,6 +66,21 @@ class ConfigTest(TestCase):
                 'secret': 'test secret from env',
                 'endpoint': 'https://api.example.com/from-env',
                 'method': 'get',
+                'timeout': '10',
+            })
+
+        with env(CLOUDSTACK_KEY='test key from env',
+                 CLOUDSTACK_SECRET='test secret from env',
+                 CLOUDSTACK_ENDPOINT='https://api.example.com/from-env',
+                 CLOUDSTACK_METHOD='post',
+                 CLOUDSTACK_TIMEOUT='99'):
+            conf = read_config()
+            self.assertEqual(conf, {
+                'key': 'test key from env',
+                'secret': 'test secret from env',
+                'endpoint': 'https://api.example.com/from-env',
+                'method': 'post',
+                'timeout': '99',
             })
 
     def test_current_dir_config(self):
@@ -73,7 +88,8 @@ class ConfigTest(TestCase):
             f.write('[cloudstack]\n'
                     'endpoint = https://api.example.com/from-file\n'
                     'key = test key from file\n'
-                    'secret = test secret from file')
+                    'secret = test secret from file\n'
+                    'timeout = 50')
             self.addCleanup(partial(os.remove, '/tmp/cloudstack.ini'))
 
         with cwd('/tmp'):
@@ -82,6 +98,7 @@ class ConfigTest(TestCase):
                 'endpoint': 'https://api.example.com/from-file',
                 'key': 'test key from file',
                 'secret': 'test secret from file',
+                'timeout': '50',
             })
 
 

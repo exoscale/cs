@@ -93,7 +93,7 @@ class CloudStack(object):
         self.endpoint = endpoint
         self.key = key
         self.secret = secret
-        self.timeout = timeout
+        self.timeout = int(timeout)
         self.method = method.lower()
 
     def __repr__(self):
@@ -151,7 +151,8 @@ class CloudStack(object):
 def read_config():
     # Try env vars first
     os.environ.setdefault('CLOUDSTACK_METHOD', 'get')
-    keys = ['endpoint', 'key', 'secret', 'method']
+    os.environ.setdefault('CLOUDSTACK_TIMEOUT', '10')
+    keys = ['endpoint', 'key', 'secret', 'method', 'timeout']
     env_conf = {}
     for key in keys:
         if 'CLOUDSTACK_{0}'.format(key.upper()) not in os.environ:
