@@ -55,7 +55,7 @@ def cs_encode(value):
 
 def transform(params):
     for key, value in list(params.items()):
-        if value is None:
+        if value is None or value == "":
             params.pop(key)
             continue
         if isinstance(value, string_type):
