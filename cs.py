@@ -123,7 +123,16 @@ class CloudStack(object):
         else:
             kw['data'] = kwargs
         response = getattr(requests, self.method)(self.endpoint, **kw)
-        data = response.json()
+
+        try:
+            data = response.json()
+        except ValueError as e:
+            msg = "Make sure endpoint URL '%s' is correct." % self.endpoint
+            raise CloudStackException(
+                "HTTP {0} response from CloudStack".format(
+                    response.status_code), response, "%s. " % str(e) + msg
+                )
+
         [key] = data.keys()
         data = data[key]
         if response.status_code != 200:
