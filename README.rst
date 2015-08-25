@@ -87,3 +87,21 @@ POST can be useful to overcome some length limits in the CloudStack API.
 ``CLOUDSTACK_TIMEOUT`` or the ``timeout`` entry in the configuration file can
 be used to change the HTTP timeout when making CloudStack requests (in
 seconds). The default value is 10.
+
+Multiple credentials can be set in ``.cloudstack.ini``. This allows selecting
+the credentials or endpoint to use with a command-line flag::
+
+    cat $HOME/.cloudstack.ini
+    [cloudstack]
+    endpoint = https://some-host/api/compute
+    key = api key
+    secret = api secret
+
+    [exoscale]
+    endpoint = https://api.exoscale.ch/compute
+    key = api key
+    secret = api secret
+
+Usage::
+
+    $ cs listVirtualMachines --region=exoscale
