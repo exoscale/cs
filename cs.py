@@ -224,7 +224,7 @@ def main():
 
     try:
         config = read_config(ini_group=region)
-    except NoSectionError as e:
+    except NoSectionError:
         raise SystemExit("Error: region '%s' not in config" % region)
 
     if 'post' in flags:
