@@ -12,9 +12,9 @@ import time
 from collections import defaultdict
 
 try:
-    from configparser import ConfigParser
+    from configparser import ConfigParser, NoSectionError
 except ImportError:  # python 2
-    from ConfigParser import ConfigParser
+    from ConfigParser import ConfigParser, NoSectionError
 
 try:
     from urllib.parse import quote
@@ -157,7 +157,7 @@ class CloudStack(object):
         return base64.b64encode(digest).decode('utf-8').strip()
 
 
-def read_config():
+def read_config(ini_group='cloudstack'):
     # Try env vars first
     os.environ.setdefault('CLOUDSTACK_METHOD', 'get')
     os.environ.setdefault('CLOUDSTACK_TIMEOUT', '10')
@@ -186,16 +186,15 @@ def read_config():
     conf = ConfigParser()
     conf.read(paths)
     try:
-        return conf['cloudstack']
+        return conf[ini_group]
     except AttributeError:  # python 2
-        return dict(conf.items('cloudstack'))
+        return dict(conf.items(ini_group))
 
 
 def main():
-    config = read_config()
-
     usage = "Usage: {0} <command> [option1=value1 " \
-            "[option2=value2] ...] [--async] [--post]".format(sys.argv[0])
+            "[option2=value2] ...] [--async] [--post] " \
+            "[--region=<region>]".format(sys.argv[0])
 
     if len(sys.argv) == 1:
         raise SystemExit(usage)
@@ -203,15 +202,30 @@ def main():
     command = sys.argv[1]
     kwargs = defaultdict(set)
     flags = set()
+    args = dict()
     for option in sys.argv[2:]:
         if option.startswith('--'):
-            flags.add(option.strip('-'))
+            option = option.strip('-')
+            if '=' in option:
+                key, value = option.split('=', 1)
+                if not value:
+                    raise SystemExit(usage)
+                args[key] = value
+            else:
+                flags.add(option)
             continue
         if '=' not in option:
             raise SystemExit(usage)
 
         key, value = option.split('=', 1)
         kwargs[key].add(value.strip(" \"'"))
+
+    region = args.get('region', 'cloudstack')
+
+    try:
+        config = read_config(ini_group=region)
+    except NoSectionError as e:
+        raise SystemExit("Error: region '%s' not in config" % region)
 
     if 'post' in flags:
         config['method'] = 'post'
