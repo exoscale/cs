@@ -6,7 +6,7 @@ with open('README.rst', 'r') as f:
 
 setup(
     name='cs',
-    version='0.6.9',
+    version='0.6.10',
     url='https://github.com/exoscale/cs',
     license='BSD',
     author=u'Bruno Renié',
