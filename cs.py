@@ -220,7 +220,9 @@ def main():
         key, value = option.split('=', 1)
         kwargs[key].add(value.strip(" \"'"))
 
-    region = args.get('region', 'cloudstack')
+    region = args.get(
+        'region', os.environ.get('CLOUDSTACK_REGION', 'cloudstack')
+    )
 
     try:
         config = read_config(ini_group=region)

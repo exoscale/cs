@@ -105,3 +105,5 @@ the credentials or endpoint to use with a command-line flag::
 Usage::
 
     $ cs listVirtualMachines --region=exoscale
+
+Optionally ``CLOUDSTACK_REGION`` can be used to overwrite the default region ``cloudstack``.
