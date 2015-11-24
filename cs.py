@@ -243,7 +243,7 @@ def main():
         while True:
             try:
                 res = cs.queryAsyncJobResult(**response)
-                if res['jobprocstatus'] == 0:
+                if res['jobstatus'] != 0:
                     response = res
                     break
                 time.sleep(3)
