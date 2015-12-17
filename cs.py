@@ -53,6 +53,9 @@ def cs_encode(value):
     return quote(value, safe=".-*_")
 
 
+def str2bool(v):
+    return v.lower() in ("yes", "true", "t", "1")
+
 def transform(params):
     for key, value in list(params.items()):
         if value is None or value == "":
@@ -89,12 +92,13 @@ class Unauthorized(CloudStackException):
 
 
 class CloudStack(object):
-    def __init__(self, endpoint, key, secret, timeout=10, method='get'):
+    def __init__(self, endpoint, key, secret, timeout=10, method='get', verify='True'):
         self.endpoint = endpoint
         self.key = key
         self.secret = secret
         self.timeout = int(timeout)
         self.method = method.lower()
+        self.verify = str2bool(verify)
 
     def __repr__(self):
         return '<CloudStack: {0}>'.format(self.endpoint)
@@ -107,7 +111,7 @@ class CloudStack(object):
     def _request(self, command, json=True, opcode_name='command', **kwargs):
         kwargs.update({
             'apiKey': self.key,
-            opcode_name: command,
+            opcode_name: command
         })
         if json:
             kwargs['response'] = 'json'
@@ -117,7 +121,7 @@ class CloudStack(object):
         kwargs = transform(kwargs)
         kwargs['signature'] = self._sign(kwargs)
 
-        kw = {'timeout': self.timeout}
+        kw = {'timeout': self.timeout, 'verify': self.verify}
         if self.method == 'get':
             kw['params'] = kwargs
         else:
@@ -161,7 +165,7 @@ def read_config(ini_group='cloudstack'):
     # Try env vars first
     os.environ.setdefault('CLOUDSTACK_METHOD', 'get')
     os.environ.setdefault('CLOUDSTACK_TIMEOUT', '10')
-    keys = ['endpoint', 'key', 'secret', 'method', 'timeout']
+    keys = ['endpoint', 'key', 'secret', 'method', 'timeout', 'verify']
     env_conf = {}
     for key in keys:
         if 'CLOUDSTACK_{0}'.format(key.upper()) not in os.environ:

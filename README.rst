@@ -41,6 +41,7 @@ From the command-line, this requires some configuration::
     endpoint = https://api.exoscale.ch/compute
     key = cloudstack api key
     secret = cloudstack api secret
+    validate = True
 
 Then::
 
@@ -107,3 +108,5 @@ Usage::
     $ cs listVirtualMachines --region=exoscale
 
 Optionally ``CLOUDSTACK_REGION`` can be used to overwrite the default region ``cloudstack``.
+
+Optional ``validate`` config can be used to disable SSL certificate validation.
