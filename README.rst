@@ -62,6 +62,9 @@ Then::
 The command-line client polls when async results are returned. To disable
 polling, use the ``--async`` flag.
 
+Configuration
+-------------
+
 Configuration is read from several locations, in the following order:
 
 * The ``CLOUDSTACK_ENDPOINT``, ``CLOUDSTACK_KEY``, ``CLOUDSTACK_SECRET`` and
@@ -107,3 +110,16 @@ Usage::
     $ cs listVirtualMachines --region=exoscale
 
 Optionally ``CLOUDSTACK_REGION`` can be used to overwrite the default region ``cloudstack``.
+
+Pagination
+----------
+
+CloudStack paginates requests. ``cs`` is able to abstract away the pagination
+logic to allow fetching large result sets in one go. This is done with the
+``fetch_list`` parameter::
+
+    $ cs listVirtualMachines fetch_list=true
+
+Or in Python::
+
+    cs.listVirtualMachines(fetch_list=True)

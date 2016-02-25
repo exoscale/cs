@@ -104,42 +104,61 @@ class CloudStack(object):
             return self._request(command, **kwargs)
         return handler
 
-    def _request(self, command, json=True, opcode_name='command', **kwargs):
+    def _request(self, command, json=True, opcode_name='command',
+                 fetch_list=False, **kwargs):
         kwargs.update({
             'apiKey': self.key,
             opcode_name: command,
         })
         if json:
             kwargs['response'] = 'json'
-        if 'page' in kwargs:
+        if 'page' in kwargs or fetch_list:
             kwargs.setdefault('pagesize', 500)
 
-        kwargs = transform(kwargs)
-        kwargs['signature'] = self._sign(kwargs)
+        kwarg = 'params' if self.method == 'get' else 'data'
 
-        kw = {'timeout': self.timeout}
-        if self.method == 'get':
-            kw['params'] = kwargs
-        else:
-            kw['data'] = kwargs
-        response = getattr(requests, self.method)(self.endpoint, **kw)
+        done = False
+        final_data = []
+        page = 1
+        while not done:
+            if fetch_list:
+                kwargs['page'] = page
 
-        try:
-            data = response.json()
-        except ValueError as e:
-            msg = "Make sure endpoint URL '%s' is correct." % self.endpoint
-            raise CloudStackException(
-                "HTTP {0} response from CloudStack".format(
-                    response.status_code), response, "%s. " % str(e) + msg
-                )
+            kwargs = transform(kwargs)
+            kwargs.pop('signature', None)
+            kwargs['signature'] = self._sign(kwargs)
 
-        [key] = data.keys()
-        data = data[key]
-        if response.status_code != 200:
-            raise CloudStackException(
-                "HTTP {0} response from CloudStack".format(
-                    response.status_code), response, data)
-        return data
+            response = getattr(requests, self.method)(self.endpoint,
+                                                      timeout=self.timeout,
+                                                      **{kwarg: kwargs})
+
+            try:
+                data = response.json()
+            except ValueError as e:
+                msg = "Make sure endpoint URL '%s' is correct." % self.endpoint
+                raise CloudStackException(
+                    "HTTP {0} response from CloudStack".format(
+                        response.status_code), response, "%s. " % str(e) + msg
+                    )
+
+            [key] = data.keys()
+            data = data[key]
+            if response.status_code != 200:
+                raise CloudStackException(
+                    "HTTP {0} response from CloudStack".format(
+                        response.status_code), response, data)
+            if fetch_list:
+                try:
+                    [key] = [k for k in data.keys() if k != 'count']
+                except ValueError:
+                    done = True
+                else:
+                    final_data.extend(data[key])
+                    page += 1
+            else:
+                final_data = data
+                done = True
+        return final_data
 
     def _sign(self, data):
         """
