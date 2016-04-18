@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 
+import argparse
 import base64
 import hashlib
 import hmac
@@ -211,44 +212,39 @@ def read_config(ini_group='cloudstack'):
 
 
 def main():
-    usage = "Usage: {0} <command> [option1=value1 " \
-            "[option2=value2] ...] [--async] [--post] " \
-            "[--region=<region>]".format(sys.argv[0])
+    parser = argparse.ArgumentParser(description='Cloustack client.')
+    parser.add_argument('--region', metavar='REGION',
+                        help='Cloudstack region in ~/.cloudstack.ini',
+                        default=os.environ.get('CLOUDSTACK_REGION', 'cloudstack'))
+    parser.add_argument('--post', action='store_true', default=False,
+                        help='use POST instead of GET')
+    parser.add_argument('--async', action='store_true', default=False,
+                        help='do not wait for async result')
+    parser.add_argument('command', metavar="COMMAND",
+                        help='Cloudstack API command to execute')
 
-    if len(sys.argv) == 1:
-        raise SystemExit(usage)
+    def parse_option(x):
+        if '=' not in x:
+            raise ValueError("{!r} is not a correctly formatted option".format(x))
+        return x.split('=', 1)
 
-    command = sys.argv[1]
+    parser.add_argument('arguments', metavar="OPTION=VALUE",
+                        nargs='*', type=parse_option,
+                        help='Cloudstack API argument')
+
+    options = parser.parse_args()
+    command = options.command
     kwargs = defaultdict(set)
-    flags = set()
-    args = dict()
-    for option in sys.argv[2:]:
-        if option.startswith('--'):
-            option = option.strip('-')
-            if '=' in option:
-                key, value = option.split('=', 1)
-                if not value:
-                    raise SystemExit(usage)
-                args[key] = value
-            else:
-                flags.add(option)
-            continue
-        if '=' not in option:
-            raise SystemExit(usage)
-
-        key, value = option.split('=', 1)
+    for arg in options.arguments:
+        key, value = arg
         kwargs[key].add(value.strip(" \"'"))
 
-    region = args.get(
-        'region', os.environ.get('CLOUDSTACK_REGION', 'cloudstack')
-    )
-
     try:
-        config = read_config(ini_group=region)
+        config = read_config(ini_group=options.region)
     except NoSectionError:
-        raise SystemExit("Error: region '%s' not in config" % region)
+        raise SystemExit("Error: region '%s' not in config" % options.region)
 
-    if 'post' in flags:
+    if options.post:
         config['method'] = 'post'
     cs = CloudStack(**config)
     try:
@@ -257,7 +253,7 @@ def main():
         response = e.args[2]
         sys.stderr.write("Cloudstack error:\n")
 
-    if 'Async' not in command and 'jobid' in response and 'async' not in flags:
+    if 'Async' not in command and 'jobid' in response and not options.async:
         sys.stderr.write("Polling result... ^C to abort\n")
         while True:
             try:
