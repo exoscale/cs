@@ -215,7 +215,8 @@ def main():
     parser = argparse.ArgumentParser(description='Cloustack client.')
     parser.add_argument('--region', metavar='REGION',
                         help='Cloudstack region in ~/.cloudstack.ini',
-                        default=os.environ.get('CLOUDSTACK_REGION', 'cloudstack'))
+                        default=os.environ.get('CLOUDSTACK_REGION',
+                                               'cloudstack'))
     parser.add_argument('--post', action='store_true', default=False,
                         help='use POST instead of GET')
     parser.add_argument('--async', action='store_true', default=False,
@@ -225,7 +226,8 @@ def main():
 
     def parse_option(x):
         if '=' not in x:
-            raise ValueError("{!r} is not a correctly formatted option".format(x))
+            raise ValueError("{!r} is not a correctly formatted "
+                             "option".format(x))
         return x.split('=', 1)
 
     parser.add_argument('arguments', metavar="OPTION=VALUE",
