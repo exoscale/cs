@@ -177,7 +177,9 @@ class CloudStack(object):
         return base64.b64encode(digest).decode('utf-8').strip()
 
 
-def read_config(ini_group='cloudstack'):
+def read_config(ini_group=None):
+    if not ini_group:
+        ini_group = os.environ.get('CLOUDSTACK_REGION', 'cloudstack')
     # Try env vars first
     os.environ.setdefault('CLOUDSTACK_METHOD', 'get')
     os.environ.setdefault('CLOUDSTACK_TIMEOUT', '10')
