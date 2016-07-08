@@ -62,6 +62,9 @@ Then::
 The command-line client polls when async results are returned. To disable
 polling, use the ``--async`` flag.
 
+To find the list CloudStack API calls go to
+http://cloudstack.apache.org/api.html
+
 Configuration
 -------------
 
@@ -123,3 +126,9 @@ logic to allow fetching large result sets in one go. This is done with the
 Or in Python::
 
     cs.listVirtualMachines(fetch_list=True)
+
+Links
+-----
+
+* CloudStack API: http://cloudstack.apache.org/api.html
+* Example of use: `Get Started with the exoscale API client <https://www.exoscale.ch/syslog/2016/02/23/get-started-with-the-exoscale-api-client/>`_
