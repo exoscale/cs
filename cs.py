@@ -251,11 +251,12 @@ def main():
     if options.post:
         config['method'] = 'post'
     cs = CloudStack(**config)
+    ok = True
     try:
         response = getattr(cs, command)(**kwargs)
     except CloudStackException as e:
         response = e.args[2]
-        sys.stderr.write("Cloudstack error:\n")
+        ok = False
 
     if 'Async' not in command and 'jobid' in response and not options.async:
         sys.stderr.write("Polling result... ^C to abort\n")
@@ -264,6 +265,8 @@ def main():
                 res = cs.queryAsyncJobResult(**response)
                 if res['jobstatus'] != 0:
                     response = res
+                    if res['jobresultcode'] != 0:
+                        ok = False
                     break
                 time.sleep(3)
             except KeyboardInterrupt:
@@ -275,6 +278,7 @@ def main():
     if pygments and sys.stdout.isatty():
         data = pygments.highlight(data, JsonLexer(), TerminalFormatter())
     sys.stdout.write(data)
+    sys.exit(int(not ok))
 
 
 if __name__ == '__main__':
