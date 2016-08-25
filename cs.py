@@ -223,6 +223,8 @@ def main():
                         help='use POST instead of GET')
     parser.add_argument('--async', action='store_true', default=False,
                         help='do not wait for async result')
+    parser.add_argument('--quiet', '-q', action='store_true', default=False,
+                        help='do not display additional status messages')
     parser.add_argument('command', metavar="COMMAND",
                         help='Cloudstack API command to execute')
 
@@ -256,10 +258,13 @@ def main():
         response = getattr(cs, command)(**kwargs)
     except CloudStackException as e:
         response = e.args[2]
+        if not options.quiet:
+            sys.stderr.write("Cloudstack error:\n")
         ok = False
 
     if 'Async' not in command and 'jobid' in response and not options.async:
-        sys.stderr.write("Polling result... ^C to abort\n")
+        if not options.quiet:
+            sys.stderr.write("Polling result... ^C to abort\n")
         while True:
             try:
                 res = cs.queryAsyncJobResult(**response)
@@ -270,7 +275,8 @@ def main():
                     break
                 time.sleep(3)
             except KeyboardInterrupt:
-                sys.stderr.write("Result not ready yet.\n")
+                if not options.quiet:
+                    sys.stderr.write("Result not ready yet.\n")
                 break
 
     data = json.dumps(response, indent=2, sort_keys=True)
