@@ -90,12 +90,13 @@ class Unauthorized(CloudStackException):
 
 
 class CloudStack(object):
-    def __init__(self, endpoint, key, secret, timeout=10, method='get'):
+    def __init__(self, endpoint, key, secret, timeout=10, method='get', verify=True):
         self.endpoint = endpoint
         self.key = key
         self.secret = secret
         self.timeout = int(timeout)
         self.method = method.lower()
+        self.verify = True if str(verify).lower() in ("yes", "y", "true") else False if str(verify).lower() in ("no",  "n", "false") else verify
 
     def __repr__(self):
         return '<CloudStack: {0}>'.format(self.endpoint)
@@ -131,6 +132,7 @@ class CloudStack(object):
 
             response = getattr(requests, self.method)(self.endpoint,
                                                       timeout=self.timeout,
+                                                      verify=self.verify,
                                                       **{kwarg: kwargs})
 
             try:
@@ -183,7 +185,7 @@ def read_config(ini_group=None):
     # Try env vars first
     os.environ.setdefault('CLOUDSTACK_METHOD', 'get')
     os.environ.setdefault('CLOUDSTACK_TIMEOUT', '10')
-    keys = ['endpoint', 'key', 'secret', 'method', 'timeout']
+    keys = ['endpoint', 'key', 'secret', 'method', 'timeout', 'verify']
     env_conf = {}
     for key in keys:
         if 'CLOUDSTACK_{0}'.format(key.upper()) not in os.environ:

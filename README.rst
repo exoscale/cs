@@ -42,6 +42,22 @@ From the command-line, this requires some configuration::
     key = cloudstack api key
     secret = cloudstack api secret
 
+The config can also specify no ssl verification:
+    cat $HOME/.cloudstack.ini
+    [cloudstack]
+    endpoint = https://api.exoscale.ch/compute
+    key = cloudstack api key
+    secret = cloudstack api secret
+    verify = False
+
+or a specific ca cert:
+    cat $HOME/.cloudstack.ini
+    [cloudstack]
+    endpoint = https://api.exoscale.ch/compute
+    key = cloudstack api key
+    secret = cloudstack api secret
+    verify = /path/to/certs/exoscale_ca.crt
+
 Then::
 
     $ cs listVirtualMachines
