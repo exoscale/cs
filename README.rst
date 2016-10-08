@@ -41,22 +41,10 @@ From the command-line, this requires some configuration::
     endpoint = https://api.exoscale.ch/compute
     key = cloudstack api key
     secret = cloudstack api secret
-
-The config can also specify no ssl verification:
-    cat $HOME/.cloudstack.ini
-    [cloudstack]
-    endpoint = https://api.exoscale.ch/compute
-    key = cloudstack api key
-    secret = cloudstack api secret
-    verify = False
-
-or a specific ca cert:
-    cat $HOME/.cloudstack.ini
-    [cloudstack]
-    endpoint = https://api.exoscale.ch/compute
-    key = cloudstack api key
-    secret = cloudstack api secret
+    # Optional ca authority certificate
     verify = /path/to/certs/exoscale_ca.crt
+    # Optional client PEM certificate
+    cert = /path/to/client_exoscale.pem
 
 Then::
 
@@ -89,6 +77,8 @@ Configuration is read from several locations, in the following order:
 * The ``CLOUDSTACK_ENDPOINT``, ``CLOUDSTACK_KEY``, ``CLOUDSTACK_SECRET`` and
   ``CLOUDSTACK_METHOD`` environment variables,
 * A ``CLOUDSTACK_CONFIG`` environment variable pointing to an ``.ini`` file,
+* A ``CLOUDSTACK_VERIFY`` (optional) environment variable pointing to a CA authority cert file,
+* A ``CLOUDSTACK_CERT`` (optional) environment variable pointing to a client PEM cert file,
 * A ``cloudstack.ini`` file in the current working directory,
 * A ``.cloudstack.ini`` file in the home directory.
 
