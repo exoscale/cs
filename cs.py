@@ -96,7 +96,7 @@ class CloudStack(object):
         self.secret = secret
         self.timeout = int(timeout)
         self.method = method.lower()
-        self.verify = True if str(verify).lower() in ("yes", "y", "true") else False if str(verify).lower() in ("no",  "n", "false") else verify
+        self.verify = verify
         self.cert = cert
 
     def __repr__(self):
