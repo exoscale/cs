@@ -28,6 +28,8 @@ try:
 except ImportError:
     pygments = None
 
+import requests
+
 
 PY2 = sys.version_info < (3, 0)
 
@@ -89,7 +91,8 @@ class Unauthorized(CloudStackException):
 
 
 class CloudStack(object):
-    def __init__(self, endpoint, key, secret, timeout=10, method='get', verify=True, cert=None):
+    def __init__(self, endpoint, key, secret, timeout=10, method='get',
+                 verify=True, cert=None):
         self.endpoint = endpoint
         self.key = key
         self.secret = secret
