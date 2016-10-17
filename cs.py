@@ -136,7 +136,7 @@ class CloudStack(object):
             response = getattr(requests, self.method)(self.endpoint,
                                                       timeout=self.timeout,
                                                       verify=self.verify,
-                                                      vert=self.cert,
+                                                      cert=self.cert,
                                                       **{kwarg: kwargs})
 
             try:
