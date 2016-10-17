@@ -284,6 +284,7 @@ def main():
     if pygments and sys.stdout.isatty():
         data = pygments.highlight(data, JsonLexer(), TerminalFormatter())
     sys.stdout.write(data)
+    sys.stdout.write('\n')
     sys.exit(int(not ok))
 
 
