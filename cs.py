@@ -6,7 +6,6 @@ import hashlib
 import hmac
 import json
 import os
-import requests
 import sys
 import time
 
@@ -117,8 +116,6 @@ class CloudStack(object):
             kwargs['response'] = 'json'
         if 'page' in kwargs or fetch_list:
             kwargs.setdefault('pagesize', 500)
-        if self.cert:
-            kwargs['cert'] = self.cert
 
         kwarg = 'params' if self.method == 'get' else 'data'
 
@@ -136,6 +133,7 @@ class CloudStack(object):
             response = getattr(requests, self.method)(self.endpoint,
                                                       timeout=self.timeout,
                                                       verify=self.verify,
+                                                      vert=self.cert,
                                                       **{kwarg: kwargs})
 
             try:
@@ -197,9 +195,7 @@ def read_config(ini_group=None):
             env_conf[key] = os.environ['CLOUDSTACK_{0}'.format(key.upper())]
     else:
         env_conf['verify'] = os.environ.get('CLOUDSTACK_VERIFY', True)
-        cert = os.environ.get('CLOUDSTACK_CERT', None)
-        if cert:
-            env_conf['cert'] = cert
+        env_conf['cert'] = os.environ.get('CLOUDSTACK_CERT', None)
         return env_conf
 
     # Config file: $PWD/cloudstack.ini or $HOME/.cloudstack.ini
