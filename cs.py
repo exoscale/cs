@@ -265,10 +265,12 @@ def main():
     try:
         response = getattr(cs, command)(**kwargs)
     except CloudStackException as e:
-        response = e.args[2]
+        response = e.args[1]
         if not options.quiet:
-            sys.stderr.write("Cloudstack error:\n")
-        ok = False
+            sys.stderr.write("Cloudstack error: HTTP response "
+                             "{0}\n".format(response.status_code))
+            sys.stderr.write(response.text)
+            sys.exit(1)
 
     if 'Async' not in command and 'jobid' in response and not options.async:
         if not options.quiet:
