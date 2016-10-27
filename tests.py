@@ -11,7 +11,7 @@ try:
 except ImportError:
     from mock import patch, call
 
-from cs import read_config, CloudStack, CloudStackException
+from cs import CloudStack, CloudStackException, read_config
 
 
 @contextmanager
@@ -67,13 +67,17 @@ class ConfigTest(TestCase):
                 'endpoint': 'https://api.example.com/from-env',
                 'method': 'get',
                 'timeout': '10',
+                'verify': True,
+                'cert': None,
             })
 
         with env(CLOUDSTACK_KEY='test key from env',
                  CLOUDSTACK_SECRET='test secret from env',
                  CLOUDSTACK_ENDPOINT='https://api.example.com/from-env',
                  CLOUDSTACK_METHOD='post',
-                 CLOUDSTACK_TIMEOUT='99'):
+                 CLOUDSTACK_TIMEOUT='99',
+                 CLOUDSTACK_VERIFY='/path/to/ca.pem',
+                 CLOUDSTACK_CERT='/path/to/cert.pem'):
             conf = read_config()
             self.assertEqual(conf, {
                 'key': 'test key from env',
@@ -81,6 +85,8 @@ class ConfigTest(TestCase):
                 'endpoint': 'https://api.example.com/from-env',
                 'method': 'post',
                 'timeout': '99',
+                'verify': '/path/to/ca.pem',
+                'cert': '/path/to/cert.pem',
             })
 
     def test_current_dir_config(self):
@@ -113,12 +119,15 @@ class RequestTest(TestCase):
         }
         machines = cs.listVirtualMachines(listall='true')
         self.assertEqual(machines, {})
-        get.assert_called_once_with('localhost', timeout=20, params={
-            'apiKey': 'foo',
-            'response': 'json',
-            'command': 'listVirtualMachines',
-            'listall': 'true',
-            'signature': 'B0d6hBsZTcFVCiioSxzwKA9Pke8='})
+        get.assert_called_once_with(
+            'localhost', timeout=20, verify=True, cert=None, params={
+                'apiKey': 'foo',
+                'response': 'json',
+                'command': 'listVirtualMachines',
+                'listall': 'true',
+                'signature': 'B0d6hBsZTcFVCiioSxzwKA9Pke8=',
+            },
+        )
 
     @patch('requests.get')
     def test_encoding(self, get):
@@ -128,13 +137,16 @@ class RequestTest(TestCase):
             'listvirtualmachinesresponse': {},
         }
         cs.listVirtualMachines(listall=1, unicode_param=u'éèààû')
-        get.assert_called_once_with('localhost', timeout=10, params={
-            'apiKey': 'foo',
-            'response': 'json',
-            'command': 'listVirtualMachines',
-            'listall': '1',
-            'unicode_param': u'éèààû',
-            'signature': 'gABU/KFJKD3FLAgKDuxQoryu4sA='})
+        get.assert_called_once_with(
+            'localhost', timeout=10, verify=True, cert=None, params={
+                'apiKey': 'foo',
+                'response': 'json',
+                'command': 'listVirtualMachines',
+                'listall': '1',
+                'unicode_param': u'éèààû',
+                'signature': 'gABU/KFJKD3FLAgKDuxQoryu4sA=',
+            },
+        )
 
     @patch("requests.get")
     def test_transformt(self, get):
@@ -145,15 +157,17 @@ class RequestTest(TestCase):
         }
         cs.listVirtualMachines(foo=["foo", "bar"],
                                bar=[{'baz': 'blah', 'foo': 'meh'}])
-        get.assert_called_once_with('localhost', timeout=10, params={
-            'command': 'listVirtualMachines',
-            'response': 'json',
-            'bar[0].foo': 'meh',
-            'bar[0].baz': 'blah',
-            'foo': 'foo,bar',
-            'apiKey': 'foo',
-            'signature': 'UGUVEfCOfGfOlqoTj1D2m5adr2g=',
-        })
+        get.assert_called_once_with(
+            'localhost', timeout=10, cert=None, verify=True, params={
+                'command': 'listVirtualMachines',
+                'response': 'json',
+                'bar[0].foo': 'meh',
+                'bar[0].baz': 'blah',
+                'foo': 'foo,bar',
+                'apiKey': 'foo',
+                'signature': 'UGUVEfCOfGfOlqoTj1D2m5adr2g=',
+            },
+        )
 
     @patch("requests.post")
     @patch("requests.get")
@@ -167,7 +181,7 @@ class RequestTest(TestCase):
         cs.listVirtualMachines(blah='brah')
         self.assertEqual(get.call_args_list, [])
         self.assertEqual(post.call_args_list, [
-            call('localhost', timeout=10, data={
+            call('localhost', timeout=10, verify=True, cert=None, data={
                 'command': 'listVirtualMachines',
                 'blah': 'brah',
                 'apiKey': 'foo',
