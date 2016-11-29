@@ -130,6 +130,29 @@ class RequestTest(TestCase):
         )
 
     @patch('requests.get')
+    def test_request_params_casing(self, get):
+        cs = CloudStack(endpoint='localhost', key='foo', secret='bar',
+                        timeout=20)
+        get.return_value.status_code = 200
+        get.return_value.json.return_value = {
+            'listvirtualmachinesresponse': {},
+        }
+        machines = cs.listVirtualMachines(zoneId=2, templateId='3',
+                                          temPlateidd='4')
+        self.assertEqual(machines, {})
+        get.assert_called_once_with(
+            'localhost', timeout=20, verify=True, cert=None, params={
+                'apiKey': 'foo',
+                'response': 'json',
+                'command': 'listVirtualMachines',
+                'signature': 'dMRxAZcs2OPK15WUulzUtnrLWD0=',
+                'templateId': '3',
+                'temPlateidd': '4',
+                'zoneId': '2'
+            },
+        )
+
+    @patch('requests.get')
     def test_encoding(self, get):
         cs = CloudStack(endpoint='localhost', key='foo', secret='bar')
         get.return_value.status_code = 200
