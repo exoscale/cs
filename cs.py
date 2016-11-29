@@ -173,9 +173,9 @@ class CloudStack(object):
         signature method (hmac/sha1).
         """
         params = "&".join(sorted([
-            "=".join((key, cs_encode(value))).lower()
+            "=".join((key, cs_encode(value)))
             for key, value in data.items()
-        ]))
+        ])).lower()
         digest = hmac.new(
             self.secret.encode('utf-8'),
             msg=params.encode('utf-8'),
