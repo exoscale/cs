@@ -92,7 +92,7 @@ class Unauthorized(CloudStackException):
 
 class CloudStack(object):
     def __init__(self, endpoint, key, secret, timeout=10, method='get',
-                 verify=True, cert=None):
+                 verify=True, cert=None, name=None):
         self.endpoint = endpoint
         self.key = key
         self.secret = secret
@@ -100,9 +100,10 @@ class CloudStack(object):
         self.method = method.lower()
         self.verify = verify
         self.cert = cert
+        self.name = name
 
     def __repr__(self):
-        return '<CloudStack: {0}>'.format(self.endpoint)
+        return '<CloudStack: {0}>'.format(self.name or self.endpoint)
 
     def __getattr__(self, command):
         def handler(**kwargs):
@@ -145,8 +146,7 @@ class CloudStack(object):
                 msg = "Make sure endpoint URL '%s' is correct." % self.endpoint
                 raise CloudStackException(
                     "HTTP {0} response from CloudStack".format(
-                        response.status_code), response, "%s. " % str(e) + msg
-                    )
+                        response.status_code), response, "%s. " % str(e) + msg)
 
             [key] = data.keys()
             data = data[key]
@@ -199,6 +199,7 @@ def read_config(ini_group=None):
     else:
         env_conf['verify'] = os.environ.get('CLOUDSTACK_VERIFY', True)
         env_conf['cert'] = os.environ.get('CLOUDSTACK_CERT', None)
+        env_conf['name'] = ini_group
         return env_conf
 
     # Config file: $PWD/cloudstack.ini or $HOME/.cloudstack.ini
@@ -216,9 +217,11 @@ def read_config(ini_group=None):
     conf = ConfigParser()
     conf.read(paths)
     try:
-        return conf[ini_group]
+        cs_conf = conf[ini_group]
     except AttributeError:  # python 2
-        return dict(conf.items(ini_group))
+        cs_conf = dict(conf.items(ini_group))
+    cs_conf['name'] = ini_group
+    return cs_conf
 
 
 def main():

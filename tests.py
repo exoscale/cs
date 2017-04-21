@@ -69,6 +69,7 @@ class ConfigTest(TestCase):
                 'timeout': '10',
                 'verify': True,
                 'cert': None,
+                'name': None,
             })
 
         with env(CLOUDSTACK_KEY='test key from env',
@@ -87,6 +88,7 @@ class ConfigTest(TestCase):
                 'timeout': '99',
                 'verify': '/path/to/ca.pem',
                 'cert': '/path/to/cert.pem',
+                'name': None,
             })
 
     def test_current_dir_config(self):
@@ -105,6 +107,7 @@ class ConfigTest(TestCase):
                 'key': 'test key from file',
                 'secret': 'test secret from file',
                 'timeout': '50',
+                'name': 'cloudstack',
             })
 
 
