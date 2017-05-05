@@ -199,7 +199,7 @@ def read_config(ini_group=None):
     else:
         env_conf['verify'] = os.environ.get('CLOUDSTACK_VERIFY', True)
         env_conf['cert'] = os.environ.get('CLOUDSTACK_CERT', None)
-        env_conf['name'] = ini_group
+        env_conf['name'] = None
         return env_conf
 
     # Config file: $PWD/cloudstack.ini or $HOME/.cloudstack.ini
