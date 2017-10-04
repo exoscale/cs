@@ -1,35 +1,22 @@
 #! /usr/bin/env python
 
-import argparse
 import base64
 import hashlib
 import hmac
-import json
 import os
 import sys
-import time
-
-from collections import defaultdict
 
 try:
-    from configparser import ConfigParser, NoSectionError
+    from configparser import ConfigParser
 except ImportError:  # python 2
-    from ConfigParser import ConfigParser, NoSectionError
+    from ConfigParser import ConfigParser
 
 try:
     from urllib.parse import quote
 except ImportError:  # python 2
     from urllib import quote
 
-try:
-    import pygments
-    from pygments.lexers import JsonLexer
-    from pygments.formatters import TerminalFormatter
-except ImportError:
-    pygments = None
-
 import requests
-
 
 PY2 = sys.version_info < (3, 0)
 
@@ -41,6 +28,12 @@ else:
     text_type = str
     string_type = str
     integer_types = int
+
+if sys.version_info >= (3, 5):
+    try:
+        from cs.async import AIOCloudStack  # noqa
+    except ImportError:
+        pass
 
 
 def cs_encode(value):
@@ -110,8 +103,8 @@ class CloudStack(object):
             return self._request(command, **kwargs)
         return handler
 
-    def _request(self, command, json=True, opcode_name='command',
-                 fetch_list=False, **kwargs):
+    def _prepare_request(self, command, json, opcode_name, fetch_list,
+                         **kwargs):
         kwargs.update({
             'apiKey': self.key,
             opcode_name: command,
@@ -122,6 +115,12 @@ class CloudStack(object):
             kwargs.setdefault('pagesize', 500)
 
         kwarg = 'params' if self.method == 'get' else 'data'
+        return kwarg, kwargs
+
+    def _request(self, command, json=True, opcode_name='command',
+                 fetch_list=False, **kwargs):
+        kwarg, kwargs = self._prepare_request(command, json, opcode_name,
+                                              fetch_list, **kwargs)
 
         done = False
         final_data = []
@@ -222,84 +221,3 @@ def read_config(ini_group=None):
         cs_conf = dict(conf.items(ini_group))
     cs_conf['name'] = ini_group
     return cs_conf
-
-
-def main():
-    parser = argparse.ArgumentParser(description='Cloustack client.')
-    parser.add_argument('--region', metavar='REGION',
-                        help='Cloudstack region in ~/.cloudstack.ini',
-                        default=os.environ.get('CLOUDSTACK_REGION',
-                                               'cloudstack'))
-    parser.add_argument('--post', action='store_true', default=False,
-                        help='use POST instead of GET')
-    parser.add_argument('--async', action='store_true', default=False,
-                        help='do not wait for async result')
-    parser.add_argument('--quiet', '-q', action='store_true', default=False,
-                        help='do not display additional status messages')
-    parser.add_argument('command', metavar="COMMAND",
-                        help='Cloudstack API command to execute')
-
-    def parse_option(x):
-        if '=' not in x:
-            raise ValueError("{!r} is not a correctly formatted "
-                             "option".format(x))
-        return x.split('=', 1)
-
-    parser.add_argument('arguments', metavar="OPTION=VALUE",
-                        nargs='*', type=parse_option,
-                        help='Cloudstack API argument')
-
-    options = parser.parse_args()
-    command = options.command
-    kwargs = defaultdict(set)
-    for arg in options.arguments:
-        key, value = arg
-        kwargs[key].add(value.strip(" \"'"))
-
-    try:
-        config = read_config(ini_group=options.region)
-    except NoSectionError:
-        raise SystemExit("Error: region '%s' not in config" % options.region)
-
-    if options.post:
-        config['method'] = 'post'
-    cs = CloudStack(**config)
-    ok = True
-    try:
-        response = getattr(cs, command)(**kwargs)
-    except CloudStackException as e:
-        response = e.args[1]
-        if not options.quiet:
-            sys.stderr.write("Cloudstack error: HTTP response "
-                             "{0}\n".format(response.status_code))
-            sys.stderr.write(response.text)
-            sys.exit(1)
-
-    if 'Async' not in command and 'jobid' in response and not options.async:
-        if not options.quiet:
-            sys.stderr.write("Polling result... ^C to abort\n")
-        while True:
-            try:
-                res = cs.queryAsyncJobResult(**response)
-                if res['jobstatus'] != 0:
-                    response = res
-                    if res['jobresultcode'] != 0:
-                        ok = False
-                    break
-                time.sleep(3)
-            except KeyboardInterrupt:
-                if not options.quiet:
-                    sys.stderr.write("Result not ready yet.\n")
-                break
-
-    data = json.dumps(response, indent=2, sort_keys=True)
-
-    if pygments and sys.stdout.isatty():
-        data = pygments.highlight(data, JsonLexer(), TerminalFormatter())
-    sys.stdout.write(data)
-    sys.stdout.write('\n')
-    sys.exit(int(not ok))
-
-
-if __name__ == '__main__':
-    main()
