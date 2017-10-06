@@ -8,6 +8,7 @@ CS
 A simple, yet powerful CloudStack API client for python and the command-line.
 
 * Python 2.6+ and 3.3+ support.
+* Async support for Python 3.5+
 * All present and future CloudStack API calls and parameters are supported.
 * Syntax highlight in the command-line client if Pygments is installed.
 * BSD license.
@@ -22,7 +23,9 @@ Installation
 Usage
 -----
 
-In Python::
+In Python:
+
+.. code-block:: python
 
     from cs import CloudStack
 
@@ -82,7 +85,9 @@ Configuration is read from several locations, in the following order:
 * A ``cloudstack.ini`` file in the current working directory,
 * A ``.cloudstack.ini`` file in the home directory.
 
-To use that configuration scheme from your Python code::
+To use that configuration scheme from your Python code:
+
+.. code-block:: python
 
     from cs import CloudStack, read_config
 
@@ -132,6 +137,59 @@ logic to allow fetching large result sets in one go. This is done with the
 Or in Python::
 
     cs.listVirtualMachines(fetch_list=True)
+
+Async client
+------------
+
+``cs`` provides the ``AIOCloudStack`` class for async/await calls in Python
+3.5+.
+
+.. code-block:: python
+
+    from cs import AIOCloudStack, read_config
+
+    cs = AIOCloudStack(**read_config())
+    vms = await cs.listVirtualMachines()
+
+By default, this client polls CloudStack's async jobs to return actual results
+for commands that result in an async job being created. You can customize this
+behavior with ``job_timeout`` (default: None -- wait indefinitely) and
+``poll_interval`` (default: 2s).
+
+.. code-block:: python
+
+    cs = AIOCloudStack(**read_config(), job_timeout=300, poll_interval=5)
+
+Async deployment of multiple vms
+________________________________
+
+.. code-block:: python
+
+    import asyncio
+    from cs import AIOCloudStack, read_config
+
+    cs = AIOCloudStack(**read_config())
+    tasks = [asyncio.ensure_future(cs.deployVirtualMachine(zoneid='',
+                                                           serviceofferingid='',
+                                                           templateid='')) for _ in range(5)]
+    results = []
+    done, pending = await asyncio.wait(tasks)
+    exceptions = 0
+    last_exception = None
+    for t in done:
+        if t.exception():
+            exceptions += 1
+            last_exception = t.exception()
+        elif t.result():
+            results.append(t.result())
+    if exceptions:
+        print(f"{exceptions} deployment(s) failed")
+        raise last_exception
+
+    # Destroy all of them, but skip waiting on the job results
+    tasks = [cs.destroyVirtualMachine(id=vm['id'], fetch_result=False)
+             for vm in results]
+    await asyncio.wait(tasks)
 
 Links
 -----
