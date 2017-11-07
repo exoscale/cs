@@ -10,12 +10,16 @@ install_requires = ['requests']
 extras_require = {
     'highlight': ['pygments'],
 }
+tests_require = []
 
 if int(setuptools.__version__.split(".", 1)[0]) < 18:
     if sys.version_info[0:2] >= (3, 5):
         install_requires.append("aiohttp")
 else:
     extras_require[":python_version>='3.5'"] = ["aiohttp"]
+
+if sys.version_info < (3, 0):
+    tests_require.append("mock")
 
 setup(
     name='cs',
@@ -41,6 +45,7 @@ setup(
     ),
     install_requires=install_requires,
     extras_require=extras_require,
+    tests_require=tests_require,
     test_suite='tests',
     entry_points={
         'console_scripts': [
