@@ -28,6 +28,15 @@ Installation
 
     pip install cs
 
+    # with the colored output
+    pip install cs[highlight]
+
+    # with the async support (Python 3.5+)
+    pip install cs[async]
+
+    # with both
+    pip install cs[async,highlight]
+
 Usage
 -----
 
