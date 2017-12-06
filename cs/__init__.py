@@ -32,6 +32,16 @@ if sys.version_info >= (3, 5):
         __all__.append('AIOCloudStack')
 
 
+def _format_json(data):
+    """Pretty print a dict as a JSON, with colors if pygments is present."""
+    output = json.dumps(data, indent=2, sort_keys=True)
+
+    if pygments and sys.stdout.isatty():
+        return pygments.highlight(output, JsonLexer(), TerminalFormatter())
+
+    return output
+
+
 def main():
     parser = argparse.ArgumentParser(description='Cloustack client.')
     parser.add_argument('--region', metavar='REGION',
@@ -80,7 +90,12 @@ def main():
         if not options.quiet:
             sys.stderr.write("Cloudstack error: HTTP response "
                              "{0}\n".format(response.status_code))
-            sys.stderr.write(response.text)
+            try:
+                data = json.loads(response.text)
+                sys.stderr.write(_format_json(data))
+            except json.decoder.JSONDecodeError:
+                sys.stderr.write(response.text)
+            sys.stderr.write("\n")
             sys.exit(1)
 
     if 'Async' not in command and 'jobid' in response and not options.async:
@@ -100,10 +115,6 @@ def main():
                     sys.stderr.write("Result not ready yet.\n")
                 break
 
-    data = json.dumps(response, indent=2, sort_keys=True)
-
-    if pygments and sys.stdout.isatty():
-        data = pygments.highlight(data, JsonLexer(), TerminalFormatter())
-    sys.stdout.write(data)
+    sys.stdout.write(_format_json(response))
     sys.stdout.write('\n')
     sys.exit(int(not ok))
