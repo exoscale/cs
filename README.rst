@@ -5,10 +5,18 @@ CS
    :alt: Build Status
    :target: https://travis-ci.org/exoscale/cs
 
+.. image:: https://img.shields.io/pypi/l/cs.svg
+   :alt: License
+   :target: https://pypi.python.org/pypi/cs
+
+.. image:: https://img.shields.io/pypi/pyversions/cs.svg
+   :alt: Python versions
+   :target: https://pypi.python.org/pypi/cs
+
 A simple, yet powerful CloudStack API client for python and the command-line.
 
 * Python 2.7+ and 3.3+ support.
-* Async support for Python 3.5+
+* Async support for Python 3.5+.
 * All present and future CloudStack API calls and parameters are supported.
 * Syntax highlight in the command-line client if Pygments is installed.
 * BSD license.
@@ -37,9 +45,14 @@ In Python:
 
     cs.createSecurityGroup(name='web', description='HTTP traffic')
 
-From the command-line, this requires some configuration::
+From the command-line, this requires some configuration:
+
+.. code-block:: console
 
     cat $HOME/.cloudstack.ini
+
+.. code-block:: ini
+
     [cloudstack]
     endpoint = https://api.exoscale.ch/compute
     key = cloudstack api key
@@ -49,9 +62,14 @@ From the command-line, this requires some configuration::
     # Optional client PEM certificate
     cert = /path/to/client_exoscale.pem
 
-Then::
+Then:
+
+.. code-block:: console
 
     $ cs listVirtualMachines
+
+.. code-block:: json
+
     {
       "count": 1,
       "virtualmachine": [
@@ -61,6 +79,8 @@ Then::
         }
       ]
     }
+
+.. code-block:: console
 
     $ cs authorizeSecurityGroupIngress \
         cidrlist="0.0.0.0/0" endport=443 startport=443 \
@@ -106,9 +126,10 @@ be used to change the HTTP timeout when making CloudStack requests (in
 seconds). The default value is 10.
 
 Multiple credentials can be set in ``.cloudstack.ini``. This allows selecting
-the credentials or endpoint to use with a command-line flag::
+the credentials or endpoint to use with a command-line flag.
 
-    cat $HOME/.cloudstack.ini
+.. code-block:: ini
+
     [cloudstack]
     endpoint = https://some-host/api/compute
     key = api key
