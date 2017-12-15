@@ -1,9 +1,15 @@
 # coding: utf-8
+"""
+A simple yet powerful CloudStack API client for Python and the command-line.
+"""
+
+from __future__ import unicode_literals
+
 import sys
-import setuptools
+from codecs import open
 from setuptools import find_packages, setup
 
-with open('README.rst', 'r') as f:
+with open('README.rst', 'r', encoding='utf-8') as f:
     long_description = f.read()
 
 install_requires = ['requests']
@@ -12,23 +18,19 @@ extras_require = {
 }
 tests_require = []
 
-if int(setuptools.__version__.split(".", 1)[0]) < 18:
-    if sys.version_info[0:2] >= (3, 5):
-        install_requires.append("aiohttp")
-else:
-    extras_require[":python_version>='3.5'"] = ["aiohttp"]
-
 if sys.version_info < (3, 0):
     tests_require.append("mock")
+elif sys.version_info >= (3, 5):
+    extras_require["async"] = ["aiohttp"]
+    tests_require.append("aiohttp")
 
 setup(
     name='cs',
     version='2.0.0',
     url='https://github.com/exoscale/cs',
     license='BSD',
-    author=u'Bruno Renié',
-    description=('A simple yet powerful CloudStack API client for '
-                 'Python and the command-line.'),
+    author='Bruno Renié',
+    description=__doc__,
     long_description=long_description,
     packages=find_packages(exclude=['tests']),
     zip_safe=False,
