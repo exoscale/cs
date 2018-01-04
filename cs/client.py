@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-
 import base64
 import hashlib
 import hmac
@@ -57,10 +56,12 @@ def transform(params):
             continue
         elif isinstance(value, integer_types):
             params[key] = text_type(value)
-        elif isinstance(value, (list, tuple, set)):
+        elif isinstance(value, (list, tuple, set, dict)):
             if not value:
                 params.pop(key)
             else:
+                if isinstance(value, dict):
+                    value = [value]
                 if isinstance(value, set):
                     value = list(value)
                 if not isinstance(value[0], dict):
@@ -68,8 +69,9 @@ def transform(params):
                 else:
                     params.pop(key)
                     for index, val in enumerate(value):
-                        for k, v in val.items():
-                            params["%s[%d].%s" % (key, index, k)] = v
+                        for name, v in val.items():
+                            k = "%s[%d].%s" % (key, index, name)
+                            params[k] = text_type(v)
         else:
             raise ValueError(type(value))
     return params
