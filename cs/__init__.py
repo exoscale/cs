@@ -90,11 +90,11 @@ def main():
         if not options.quiet:
             sys.stderr.write("Cloudstack error: HTTP response "
                              "{0}\n".format(response.status_code))
-            try:
-                data = json.loads(response.text)
-                sys.stderr.write(_format_json(data))
-            except json.decoder.JSONDecodeError:
-                sys.stderr.write(response.text)
+
+        try:
+            response = json.loads(response.text)
+        except json.decoder.JSONDecodeError:
+            sys.stderr.write(response.text)
             sys.stderr.write("\n")
             sys.exit(1)
 
