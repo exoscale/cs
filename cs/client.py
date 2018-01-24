@@ -50,7 +50,7 @@ def cs_encode(value):
 
 def transform(params):
     for key, value in list(params.items()):
-        if value is None or value == "":
+        if value is None:
             params.pop(key)
             continue
         if isinstance(value, string_type):
