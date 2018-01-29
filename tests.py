@@ -175,7 +175,7 @@ class RequestTest(TestCase):
         )
 
     @patch("requests.get")
-    def test_transformt(self, get):
+    def test_transform(self, get):
         cs = CloudStack(endpoint='localhost', key='foo', secret='bar')
         get.return_value.status_code = 200
         get.return_value.json.return_value = {
@@ -192,6 +192,25 @@ class RequestTest(TestCase):
                 'foo': 'foo,bar',
                 'apiKey': 'foo',
                 'signature': 'UGUVEfCOfGfOlqoTj1D2m5adr2g=',
+            },
+        )
+
+    @patch("requests.get")
+    def test_transform_empty(self, get):
+        cs = CloudStack(endpoint='localhost', key='foo', secret='bar')
+        get.return_value.status_code = 200
+        get.return_value.json.return_value = {
+            'createnetworkresponse': {},
+        }
+        cs.createNetwork(name="", display_text="")
+        get.assert_called_once_with(
+            'localhost', timeout=10, cert=None, verify=True, params={
+                'command': 'createNetwork',
+                'response': 'json',
+                'name': '',
+                'display_text': '',
+                'apiKey': 'foo',
+                'signature': 'CistTEiPt/4Rv1v4qSyILvPbhmg=',
             },
         )
 
