@@ -1,4 +1,6 @@
 # coding: utf-8
+from __future__ import unicode_literals
+
 import os
 import sys
 
@@ -182,16 +184,37 @@ class RequestTest(TestCase):
             'listvirtualmachinesresponse': {},
         }
         cs.listVirtualMachines(foo=["foo", "bar"],
-                               bar=[{'baz': 'blah', 'foo': 'meh'}])
+                               bar=[{'baz': 'blah', 'foo': 1000}])
         get.assert_called_once_with(
             'localhost', timeout=10, cert=None, verify=True, params={
                 'command': 'listVirtualMachines',
                 'response': 'json',
-                'bar[0].foo': 'meh',
+                'bar[0].foo': '1000',
                 'bar[0].baz': 'blah',
                 'foo': 'foo,bar',
                 'apiKey': 'foo',
-                'signature': 'UGUVEfCOfGfOlqoTj1D2m5adr2g=',
+                'signature': '5RnA+jzX2BllTd85GwNrjoqxHl4=',
+            },
+        )
+
+    @patch("requests.get")
+    def test_transform_dict(self, get):
+        cs = CloudStack(endpoint='localhost', key='foo', secret='bar')
+        get.return_value.status_code = 200
+        get.return_value.json.return_value = {
+            'scalevirtualmachineresponse': {},
+        }
+        cs.scaleVirtualMachine(id='a',
+                               details={'cpunumber': 1000, 'memory': '640k'})
+        get.assert_called_once_with(
+            'localhost', timeout=10, cert=None, verify=True, params={
+                'command': 'scaleVirtualMachine',
+                'response': 'json',
+                'id': 'a',
+                'details[0].cpunumber': '1000',
+                'details[0].memory': '640k',
+                'apiKey': 'foo',
+                'signature': 'ZNl66z3gFhnsx2Eo3vvCIM0kAgI=',
             },
         )
 
