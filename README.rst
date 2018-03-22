@@ -134,6 +134,10 @@ POST can be useful to overcome some length limits in the CloudStack API.
 be used to change the HTTP timeout when making CloudStack requests (in
 seconds). The default value is 10.
 
+``CLOUDSTACK_RETRY`` or the ``retry`` entry in the configuration file
+(integer) can be used to retry ``list`` and ``queryAsync`` requests on
+failure. The default value is 0, meaning no retry.
+
 Multiple credentials can be set in ``.cloudstack.ini``. This allows selecting
 the credentials or endpoint to use with a command-line flag.
 
