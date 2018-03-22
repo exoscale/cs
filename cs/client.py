@@ -87,7 +87,7 @@ class Unauthorized(CloudStackException):
 
 class CloudStack(object):
     def __init__(self, endpoint, key, secret, timeout=10, method='get',
-                 verify=True, cert=None, name=None):
+                 verify=True, cert=None, name=None, retry=0):
         self.endpoint = endpoint
         self.key = key
         self.secret = secret
@@ -96,6 +96,7 @@ class CloudStack(object):
         self.verify = verify
         self.cert = cert
         self.name = name
+        self.retry = int(retry)
 
     def __repr__(self):
         return '<CloudStack: {0}>'.format(self.name or self.endpoint)
@@ -125,6 +126,7 @@ class CloudStack(object):
                                               fetch_list, **kwargs)
 
         done = False
+        max_retry = self.retry
         final_data = []
         page = 1
         while not done:
@@ -135,11 +137,21 @@ class CloudStack(object):
             kwargs.pop('signature', None)
             kwargs['signature'] = self._sign(kwargs)
 
-            response = getattr(requests, self.method)(self.endpoint,
-                                                      timeout=self.timeout,
-                                                      verify=self.verify,
-                                                      cert=self.cert,
-                                                      **{kwarg: kwargs})
+            try:
+                response = getattr(requests, self.method)(self.endpoint,
+                                                          timeout=self.timeout,
+                                                          verify=self.verify,
+                                                          cert=self.cert,
+                                                          **{kwarg: kwargs})
+            except requests.exceptions.ConnectionError:
+                max_retry -= 1
+                if (
+                    max_retry < 0 or
+                    not command.startswith(('list', 'queryAsync'))
+                ):
+                    raise
+                continue
+            max_retry = self.retry
 
             try:
                 data = response.json()
@@ -201,6 +213,7 @@ def read_config(ini_group=None):
         env_conf['verify'] = os.environ.get('CLOUDSTACK_VERIFY', True)
         env_conf['cert'] = os.environ.get('CLOUDSTACK_CERT', None)
         env_conf['name'] = None
+        env_conf['retry'] = os.environ.get('CLOUDSTACK_RETRY', 0)
         return env_conf
 
     # Config file: $PWD/cloudstack.ini or $HOME/.cloudstack.ini

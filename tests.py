@@ -72,6 +72,7 @@ class ConfigTest(TestCase):
                 'verify': True,
                 'cert': None,
                 'name': None,
+                'retry': 0,
             })
 
         with env(CLOUDSTACK_KEY='test key from env',
@@ -79,6 +80,7 @@ class ConfigTest(TestCase):
                  CLOUDSTACK_ENDPOINT='https://api.example.com/from-env',
                  CLOUDSTACK_METHOD='post',
                  CLOUDSTACK_TIMEOUT='99',
+                 CLOUDSTACK_RETRY='5',
                  CLOUDSTACK_VERIFY='/path/to/ca.pem',
                  CLOUDSTACK_CERT='/path/to/cert.pem'):
             conf = read_config()
@@ -91,6 +93,7 @@ class ConfigTest(TestCase):
                 'verify': '/path/to/ca.pem',
                 'cert': '/path/to/cert.pem',
                 'name': None,
+                'retry': '5',
             })
 
     def test_current_dir_config(self):
