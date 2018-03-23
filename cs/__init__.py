@@ -4,7 +4,6 @@ import os
 import sys
 import time
 from collections import defaultdict
-from collections.abc import Sequence
 
 try:
     from configparser import NoSectionError
@@ -35,6 +34,7 @@ if sys.version_info >= (3, 5):
 if sys.version_info >= (3, 6):
     try:
         import lxml.etree
+        from requests_xml import BaseParser
     except ImportError:
         pass
 
@@ -51,7 +51,7 @@ def _format_json(data):
 
 def _format_xml(data):
     """Pretty print the XML struct, with colors if pygments is present."""
-    if isinstance(data, Sequence):
+    if not isinstance(data, BaseParser):
         output = []
         for elem in data:
             output.append(_format_xml(elem))
@@ -102,6 +102,10 @@ def mainx():
     parser.add_argument('--xpath', metavar='XPATH',
                         help='XPath query into the result')
 
+    parser.add_argument('--json', metavar='PARSER',
+                        help='convert XML to JSON using given serializer, '
+                             'e.g. yahoo')
+
     options = parser.parse_args()
     command = options.command
     kwargs = defaultdict(set)
@@ -133,9 +137,20 @@ def mainx():
         sys.exit(1)
 
     if options.xpath:
-        response = response.xpath(options.xpath)
+        root = lxml.etree.Element("root")
+        root.set("xpath", options.xpath)
+        for child in response.xpath(options.xpath):
+            root.append(child.element)
+        response = BaseParser(element=root)
 
-    sys.stdout.write(_format_xml(response))
+    if options.json:
+        import xmljson
+        serializer = getattr(xmljson, options.json)
+        data = serializer.data(lxml.etree.fromstring(response.raw_xml))
+        sys.stdout.write(_format_json(data))
+        sys.stdout.write('\n')
+    else:
+        sys.stdout.write(_format_xml(response))
     sys.exit(not ok)
 
 
