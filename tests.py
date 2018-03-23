@@ -46,6 +46,7 @@ def cwd(path):
 class ConfigTest(TestCase):
 
     if sys.version_info < (2, 7):
+
         def setUp(self):
             super(ConfigTest, self).setUp()
             self._cleanups = []
@@ -59,236 +60,281 @@ class ConfigTest(TestCase):
                 fn(*args, **kwargs)
 
     def test_env_vars(self):
-        with env(CLOUDSTACK_KEY='test key from env',
-                 CLOUDSTACK_SECRET='test secret from env',
-                 CLOUDSTACK_ENDPOINT='https://api.example.com/from-env'):
+        with env(
+            CLOUDSTACK_KEY="test key from env",
+            CLOUDSTACK_SECRET="test secret from env",
+            CLOUDSTACK_ENDPOINT="https://api.example.com/from-env",
+        ):
             conf = read_config()
-            self.assertEqual(conf, {
-                'key': 'test key from env',
-                'secret': 'test secret from env',
-                'endpoint': 'https://api.example.com/from-env',
-                'method': 'get',
-                'timeout': '10',
-                'verify': True,
-                'cert': None,
-                'name': None,
-                'retry': 0,
-            })
+            self.assertEqual(
+                conf,
+                {
+                    "key": "test key from env",
+                    "secret": "test secret from env",
+                    "endpoint": "https://api.example.com/from-env",
+                    "method": "get",
+                    "timeout": "10",
+                    "verify": True,
+                    "cert": None,
+                    "name": None,
+                    "retry": 0,
+                },
+            )
 
-        with env(CLOUDSTACK_KEY='test key from env',
-                 CLOUDSTACK_SECRET='test secret from env',
-                 CLOUDSTACK_ENDPOINT='https://api.example.com/from-env',
-                 CLOUDSTACK_METHOD='post',
-                 CLOUDSTACK_TIMEOUT='99',
-                 CLOUDSTACK_RETRY='5',
-                 CLOUDSTACK_VERIFY='/path/to/ca.pem',
-                 CLOUDSTACK_CERT='/path/to/cert.pem'):
+        with env(
+            CLOUDSTACK_KEY="test key from env",
+            CLOUDSTACK_SECRET="test secret from env",
+            CLOUDSTACK_ENDPOINT="https://api.example.com/from-env",
+            CLOUDSTACK_METHOD="post",
+            CLOUDSTACK_TIMEOUT="99",
+            CLOUDSTACK_RETRY="5",
+            CLOUDSTACK_VERIFY="/path/to/ca.pem",
+            CLOUDSTACK_CERT="/path/to/cert.pem",
+        ):
             conf = read_config()
-            self.assertEqual(conf, {
-                'key': 'test key from env',
-                'secret': 'test secret from env',
-                'endpoint': 'https://api.example.com/from-env',
-                'method': 'post',
-                'timeout': '99',
-                'verify': '/path/to/ca.pem',
-                'cert': '/path/to/cert.pem',
-                'name': None,
-                'retry': '5',
-            })
+            self.assertEqual(
+                conf,
+                {
+                    "key": "test key from env",
+                    "secret": "test secret from env",
+                    "endpoint": "https://api.example.com/from-env",
+                    "method": "post",
+                    "timeout": "99",
+                    "verify": "/path/to/ca.pem",
+                    "cert": "/path/to/cert.pem",
+                    "name": None,
+                    "retry": "5",
+                },
+            )
 
     def test_current_dir_config(self):
-        with open('/tmp/cloudstack.ini', 'w') as f:
-            f.write('[cloudstack]\n'
-                    'endpoint = https://api.example.com/from-file\n'
-                    'key = test key from file\n'
-                    'secret = test secret from file\n'
-                    'theme = monokai\n'
-                    'other = please ignore me\n'
-                    'timeout = 50')
-            self.addCleanup(partial(os.remove, '/tmp/cloudstack.ini'))
+        with open("/tmp/cloudstack.ini", "w") as f:
+            f.write(
+                "[cloudstack]\n"
+                "endpoint = https://api.example.com/from-file\n"
+                "key = test key from file\n"
+                "secret = test secret from file\n"
+                "theme = monokai\n"
+                "other = please ignore me\n"
+                "timeout = 50"
+            )
+            self.addCleanup(partial(os.remove, "/tmp/cloudstack.ini"))
 
-        with cwd('/tmp'):
+        with cwd("/tmp"):
             conf = read_config()
-            self.assertEqual(dict(conf), {
-                'endpoint': 'https://api.example.com/from-file',
-                'key': 'test key from file',
-                'secret': 'test secret from file',
-                'theme': 'monokai',
-                'timeout': '50',
-                'name': 'cloudstack',
-            })
+            self.assertEqual(
+                dict(conf),
+                {
+                    "endpoint": "https://api.example.com/from-file",
+                    "key": "test key from file",
+                    "secret": "test secret from file",
+                    "theme": "monokai",
+                    "timeout": "50",
+                    "name": "cloudstack",
+                },
+            )
 
 
 class RequestTest(TestCase):
-    @patch('requests.get')
+    @patch("requests.get")
     def test_request_params(self, get):
-        cs = CloudStack(endpoint='localhost', key='foo', secret='bar',
-                        timeout=20)
+        cs = CloudStack(
+            endpoint="http://localhost", key="foo", secret="bar", timeout=20
+        )
         get.return_value.status_code = 200
-        get.return_value.json.return_value = {
-            'listvirtualmachinesresponse': {},
-        }
-        machines = cs.listVirtualMachines(listall='true',
-                                          headers={'Accept-Encoding': 'br'})
+        get.return_value.json.return_value = {"listvirtualmachinesresponse": {}}
+        machines = cs.listVirtualMachines(
+            listall="true", headers={"Accept-Encoding": "br"}
+        )
         self.assertEqual(machines, {})
         get.assert_called_once_with(
-            'localhost', timeout=20, verify=True, cert=None,
-            headers={
-                'Accept-Encoding': 'br',
-            },
+            "http://localhost",
+            timeout=20,
+            verify=True,
+            cert=None,
+            headers={"Accept-Encoding": "br"},
             params={
-                'apiKey': 'foo',
-                'response': 'json',
-                'command': 'listVirtualMachines',
-                'listall': 'true',
-                'signature': 'B0d6hBsZTcFVCiioSxzwKA9Pke8=',
+                "apiKey": "foo",
+                "response": "json",
+                "command": "listVirtualMachines",
+                "listall": "true",
+                "signature": "B0d6hBsZTcFVCiioSxzwKA9Pke8=",
             },
         )
 
-    @patch('requests.get')
+    @patch("requests.get")
     def test_request_params_casing(self, get):
-        cs = CloudStack(endpoint='localhost', key='foo', secret='bar',
-                        timeout=20)
+        cs = CloudStack(
+            endpoint="http://localhost", key="foo", secret="bar", timeout=20
+        )
         get.return_value.status_code = 200
-        get.return_value.json.return_value = {
-            'listvirtualmachinesresponse': {},
-        }
-        machines = cs.listVirtualMachines(zoneId=2, templateId='3',
-                                          temPlateidd='4', pageSize='10',
-                                          fetch_list=True)
+        get.return_value.json.return_value = {"listvirtualmachinesresponse": {}}
+        machines = cs.listVirtualMachines(
+            zoneId=2,
+            templateId="3",
+            temPlateidd="4",
+            pageSize="10",
+            fetch_list=True,
+        )
         self.assertEqual(machines, [])
         get.assert_called_once_with(
-            'localhost', timeout=20, verify=True, cert=None, headers=None,
+            "http://localhost",
+            timeout=20,
+            verify=True,
+            cert=None,
+            headers=None,
             params={
-                'apiKey': 'foo',
-                'response': 'json',
-                'command': 'listVirtualMachines',
-                'signature': 'mMS7XALuGkCXk7kj5SywySku0Z0=',
-                'templateId': '3',
-                'temPlateidd': '4',
-                'zoneId': '2',
-                'page': '1',
-                'pageSize': '10',
+                "apiKey": "foo",
+                "response": "json",
+                "command": "listVirtualMachines",
+                "signature": "mMS7XALuGkCXk7kj5SywySku0Z0=",
+                "templateId": "3",
+                "temPlateidd": "4",
+                "zoneId": "2",
+                "page": "1",
+                "pageSize": "10",
             },
         )
 
-    @patch('requests.get')
+    @patch("requests.get")
     def test_encoding(self, get):
-        cs = CloudStack(endpoint='localhost', key='foo', secret='bar')
+        cs = CloudStack(endpoint="http://localhost", key="foo", secret="bar")
         get.return_value.status_code = 200
-        get.return_value.json.return_value = {
-            'listvirtualmachinesresponse': {},
-        }
-        cs.listVirtualMachines(listall=1, unicode_param=u'éèààû')
+        get.return_value.json.return_value = {"listvirtualmachinesresponse": {}}
+        cs.listVirtualMachines(listall=1, unicode_param="éèààû")
         get.assert_called_once_with(
-            'localhost', timeout=10, verify=True, cert=None, headers=None,
+            "http://localhost",
+            timeout=10,
+            verify=True,
+            cert=None,
+            headers=None,
             params={
-                'apiKey': 'foo',
-                'response': 'json',
-                'command': 'listVirtualMachines',
-                'listall': '1',
-                'unicode_param': u'éèààû',
-                'signature': 'gABU/KFJKD3FLAgKDuxQoryu4sA=',
+                "apiKey": "foo",
+                "response": "json",
+                "command": "listVirtualMachines",
+                "listall": "1",
+                "unicode_param": "éèààû",
+                "signature": "gABU/KFJKD3FLAgKDuxQoryu4sA=",
             },
         )
 
     @patch("requests.get")
     def test_transform(self, get):
-        cs = CloudStack(endpoint='localhost', key='foo', secret='bar')
+        cs = CloudStack(endpoint="http://localhost", key="foo", secret="bar")
         get.return_value.status_code = 200
-        get.return_value.json.return_value = {
-            'listvirtualmachinesresponse': {},
-        }
-        cs.listVirtualMachines(foo=["foo", "bar"],
-                               bar=[{'baz': 'blah', 'foo': 1000}],
-                               bytes_param=b'blah')
+        get.return_value.json.return_value = {"listvirtualmachinesresponse": {}}
+        cs.listVirtualMachines(
+            foo=["foo", "bar"],
+            bar=[{"baz": "blah", "foo": 1000}],
+            bytes_param=b"blah",
+        )
         get.assert_called_once_with(
-            'localhost', timeout=10, cert=None, verify=True, headers=None,
+            "http://localhost",
+            timeout=10,
+            cert=None,
+            verify=True,
+            headers=None,
             params={
-                'command': 'listVirtualMachines',
-                'response': 'json',
-                'bar[0].foo': '1000',
-                'bar[0].baz': 'blah',
-                'foo': 'foo,bar',
-                'bytes_param': b'blah',
-                'apiKey': 'foo',
-                'signature': 'ImJ/5F0P2RDL7yn4LdLnGcEx5WE=',
+                "command": "listVirtualMachines",
+                "response": "json",
+                "bar[0].foo": "1000",
+                "bar[0].baz": "blah",
+                "foo": "foo,bar",
+                "bytes_param": b"blah",
+                "apiKey": "foo",
+                "signature": "ImJ/5F0P2RDL7yn4LdLnGcEx5WE=",
             },
         )
 
     @patch("requests.get")
     def test_transform_dict(self, get):
-        cs = CloudStack(endpoint='localhost', key='foo', secret='bar')
+        cs = CloudStack(endpoint="http://localhost", key="foo", secret="bar")
         get.return_value.status_code = 200
-        get.return_value.json.return_value = {
-            'scalevirtualmachineresponse': {},
-        }
-        cs.scaleVirtualMachine(id='a',
-                               details={'cpunumber': 1000, 'memory': '640k'})
+        get.return_value.json.return_value = {"scalevirtualmachineresponse": {}}
+        cs.scaleVirtualMachine(
+            id="a", details={"cpunumber": 1000, "memory": "640k"}
+        )
         get.assert_called_once_with(
-            'localhost', timeout=10, cert=None, verify=True, headers=None,
+            "http://localhost",
+            timeout=10,
+            cert=None,
+            verify=True,
+            headers=None,
             params={
-                'command': 'scaleVirtualMachine',
-                'response': 'json',
-                'id': 'a',
-                'details[0].cpunumber': '1000',
-                'details[0].memory': '640k',
-                'apiKey': 'foo',
-                'signature': 'ZNl66z3gFhnsx2Eo3vvCIM0kAgI=',
+                "command": "scaleVirtualMachine",
+                "response": "json",
+                "id": "a",
+                "details[0].cpunumber": "1000",
+                "details[0].memory": "640k",
+                "apiKey": "foo",
+                "signature": "ZNl66z3gFhnsx2Eo3vvCIM0kAgI=",
             },
         )
 
     @patch("requests.get")
     def test_transform_empty(self, get):
-        cs = CloudStack(endpoint='localhost', key='foo', secret='bar')
+        cs = CloudStack(endpoint="http://localhost", key="foo", secret="bar")
         get.return_value.status_code = 200
-        get.return_value.json.return_value = {
-            'createnetworkresponse': {},
-        }
+        get.return_value.json.return_value = {"createnetworkresponse": {}}
         cs.createNetwork(name="", display_text="")
         get.assert_called_once_with(
-            'localhost', timeout=10, cert=None, verify=True, headers=None,
+            "http://localhost",
+            timeout=10,
+            cert=None,
+            verify=True,
+            headers=None,
             params={
-                'command': 'createNetwork',
-                'response': 'json',
-                'name': '',
-                'display_text': '',
-                'apiKey': 'foo',
-                'signature': 'CistTEiPt/4Rv1v4qSyILvPbhmg=',
+                "command": "createNetwork",
+                "response": "json",
+                "name": "",
+                "display_text": "",
+                "apiKey": "foo",
+                "signature": "CistTEiPt/4Rv1v4qSyILvPbhmg=",
             },
         )
 
     @patch("requests.post")
     @patch("requests.get")
     def test_method(self, get, post):
-        cs = CloudStack(endpoint='localhost', key='foo', secret='bar',
-                        method='post')
+        cs = CloudStack(
+            endpoint="http://localhost", key="foo", secret="bar", method="post"
+        )
         post.return_value.status_code = 200
         post.return_value.json.return_value = {
-            'listvirtualmachinesresponse': {},
+            "listvirtualmachinesresponse": {}
         }
-        cs.listVirtualMachines(blah='brah')
+        cs.listVirtualMachines(blah="brah")
         self.assertEqual(get.call_args_list, [])
-        self.assertEqual(post.call_args_list, [
-            call(
-                'localhost', timeout=10, verify=True, cert=None, headers=None,
-                data={
-                   'command': 'listVirtualMachines',
-                   'blah': 'brah',
-                   'apiKey': 'foo',
-                   'response': 'json',
-                   'signature': '58VvLSaVUqHnG9DhXNOAiDFwBoA=',
-                }
-            )]
+        self.assertEqual(
+            post.call_args_list,
+            [
+                call(
+                    "http://localhost",
+                    timeout=10,
+                    verify=True,
+                    cert=None,
+                    headers=None,
+                    data={
+                        "command": "listVirtualMachines",
+                        "blah": "brah",
+                        "apiKey": "foo",
+                        "response": "json",
+                        "signature": "58VvLSaVUqHnG9DhXNOAiDFwBoA=",
+                    },
+                )
+            ],
         )
 
     @patch("requests.get")
     def test_error(self, get):
         get.return_value.status_code = 530
         get.return_value.json.return_value = {
-            'listvirtualmachinesresponse': {'errorcode': 530,
-                                            'uuidList': [],
-                                            'cserrorcode': 9999,
-                                            'errortext': 'Fail'}}
-        cs = CloudStack(endpoint='localhost', key='foo', secret='bar')
+            "listvirtualmachinesresponse": {
+                "errorcode": 530,
+                "uuidList": [],
+                "cserrorcode": 9999,
+                "errortext": "Fail",
+            }
+        }
+        cs = CloudStack(endpoint="http://localhost", key="foo", secret="bar")
         self.assertRaises(CloudStackException, cs.listVirtualMachines)
