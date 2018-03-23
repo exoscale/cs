@@ -15,7 +15,8 @@ try:
 except ImportError:  # python 2
     from urllib import quote
 
-import requests
+from requests import Session
+from requests.exceptions import ConnectionError
 
 PY2 = sys.version_info < (3, 0)
 
@@ -31,6 +32,11 @@ else:
 if sys.version_info >= (3, 5):
     try:
         from cs.async import AIOCloudStack  # noqa
+    except ImportError:
+        pass
+if sys.version_info >= (3, 6):
+    try:
+        from requests_xml import XMLSession
     except ImportError:
         pass
 
@@ -87,12 +93,13 @@ class Unauthorized(CloudStackException):
 
 class CloudStack(object):
     def __init__(self, endpoint, key, secret, timeout=10, method='get',
-                 verify=True, cert=None, name=None, retry=0):
+                 response='json', verify=True, cert=None, name=None, retry=0):
         self.endpoint = endpoint
         self.key = key
         self.secret = secret
         self.timeout = int(timeout)
         self.method = method.lower()
+        self.response = response.lower()
         self.verify = verify
         self.cert = cert
         self.name = name
@@ -106,29 +113,35 @@ class CloudStack(object):
             return self._request(command, **kwargs)
         return handler
 
-    def _prepare_request(self, command, json, opcode_name, fetch_list,
+    def _prepare_request(self, command, opcode_name, fetch_list,
                          **kwargs):
         kwargs.update({
             'apiKey': self.key,
+            'response': self.response,
             opcode_name: command,
         })
-        if json:
-            kwargs['response'] = 'json'
         if 'page' in kwargs or fetch_list:
             kwargs.setdefault('pagesize', 500)
 
         kwarg = 'params' if self.method == 'get' else 'data'
         return kwarg, kwargs
 
-    def _request(self, command, json=True, opcode_name='command',
+    def _request(self, command, opcode_name='command',
                  fetch_list=False, **kwargs):
-        kwarg, kwargs = self._prepare_request(command, json, opcode_name,
+        kwarg, kwargs = self._prepare_request(command, opcode_name,
                                               fetch_list, **kwargs)
 
         done = False
         max_retry = self.retry
         final_data = []
         page = 1
+
+        use_xml = self.response == 'xml'
+        session = XMLSession() if use_xml else Session()
+
+        if fetch_list and use_xml:
+            raise ValueError("Fetch list isn't supported while using XML")
+
         while not done:
             if fetch_list:
                 kwargs['page'] = page
@@ -138,12 +151,12 @@ class CloudStack(object):
             kwargs['signature'] = self._sign(kwargs)
 
             try:
-                response = getattr(requests, self.method)(self.endpoint,
-                                                          timeout=self.timeout,
-                                                          verify=self.verify,
-                                                          cert=self.cert,
-                                                          **{kwarg: kwargs})
-            except requests.exceptions.ConnectionError:
+                response = getattr(session, self.method)(self.endpoint,
+                                                         timeout=self.timeout,
+                                                         verify=self.verify,
+                                                         cert=self.cert,
+                                                         **{kwarg: kwargs})
+            except ConnectionError:
                 max_retry -= 1
                 if (
                     max_retry < 0 or
@@ -154,15 +167,17 @@ class CloudStack(object):
             max_retry = self.retry
 
             try:
-                data = response.json()
+                data = response.xml if use_xml else response.json()
             except ValueError as e:
                 msg = "Make sure endpoint URL '%s' is correct." % self.endpoint
                 raise CloudStackException(
                     "HTTP {0} response from CloudStack".format(
                         response.status_code), response, "%s. " % str(e) + msg)
+            else:
+                if not use_xml:
+                    [key] = data.keys()
+                    data = data[key]
 
-            [key] = data.keys()
-            data = data[key]
             if response.status_code != 200:
                 raise CloudStackException(
                     "HTTP {0} response from CloudStack".format(
