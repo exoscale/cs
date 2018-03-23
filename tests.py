@@ -119,7 +119,7 @@ class ConfigTest(TestCase):
 class RequestTest(TestCase):
     @patch('requests.get')
     def test_request_params(self, get):
-        cs = CloudStack(endpoint='localhost', key='foo', secret='bar',
+        cs = CloudStack(endpoint='http://localhost', key='foo', secret='bar',
                         timeout=20)
         get.return_value.status_code = 200
         get.return_value.json.return_value = {
@@ -128,7 +128,7 @@ class RequestTest(TestCase):
         machines = cs.listVirtualMachines(listall='true')
         self.assertEqual(machines, {})
         get.assert_called_once_with(
-            'localhost', timeout=20, verify=True, cert=None, params={
+            'http://localhost', timeout=20, verify=True, cert=None, params={
                 'apiKey': 'foo',
                 'response': 'json',
                 'command': 'listVirtualMachines',
@@ -139,7 +139,7 @@ class RequestTest(TestCase):
 
     @patch('requests.get')
     def test_request_params_casing(self, get):
-        cs = CloudStack(endpoint='localhost', key='foo', secret='bar',
+        cs = CloudStack(endpoint='http://localhost', key='foo', secret='bar',
                         timeout=20)
         get.return_value.status_code = 200
         get.return_value.json.return_value = {
@@ -149,7 +149,7 @@ class RequestTest(TestCase):
                                           temPlateidd='4')
         self.assertEqual(machines, {})
         get.assert_called_once_with(
-            'localhost', timeout=20, verify=True, cert=None, params={
+            'http://localhost', timeout=20, verify=True, cert=None, params={
                 'apiKey': 'foo',
                 'response': 'json',
                 'command': 'listVirtualMachines',
@@ -162,14 +162,14 @@ class RequestTest(TestCase):
 
     @patch('requests.get')
     def test_encoding(self, get):
-        cs = CloudStack(endpoint='localhost', key='foo', secret='bar')
+        cs = CloudStack(endpoint='http://localhost', key='foo', secret='bar')
         get.return_value.status_code = 200
         get.return_value.json.return_value = {
             'listvirtualmachinesresponse': {},
         }
         cs.listVirtualMachines(listall=1, unicode_param=u'éèààû')
         get.assert_called_once_with(
-            'localhost', timeout=10, verify=True, cert=None, params={
+            'http://localhost', timeout=10, verify=True, cert=None, params={
                 'apiKey': 'foo',
                 'response': 'json',
                 'command': 'listVirtualMachines',
@@ -181,7 +181,7 @@ class RequestTest(TestCase):
 
     @patch("requests.get")
     def test_transform(self, get):
-        cs = CloudStack(endpoint='localhost', key='foo', secret='bar')
+        cs = CloudStack(endpoint='http://localhost', key='foo', secret='bar')
         get.return_value.status_code = 200
         get.return_value.json.return_value = {
             'listvirtualmachinesresponse': {},
@@ -189,7 +189,7 @@ class RequestTest(TestCase):
         cs.listVirtualMachines(foo=["foo", "bar"],
                                bar=[{'baz': 'blah', 'foo': 1000}])
         get.assert_called_once_with(
-            'localhost', timeout=10, cert=None, verify=True, params={
+            'http://localhost', timeout=10, cert=None, verify=True, params={
                 'command': 'listVirtualMachines',
                 'response': 'json',
                 'bar[0].foo': '1000',
@@ -202,7 +202,7 @@ class RequestTest(TestCase):
 
     @patch("requests.get")
     def test_transform_dict(self, get):
-        cs = CloudStack(endpoint='localhost', key='foo', secret='bar')
+        cs = CloudStack(endpoint='http://localhost', key='foo', secret='bar')
         get.return_value.status_code = 200
         get.return_value.json.return_value = {
             'scalevirtualmachineresponse': {},
@@ -210,7 +210,7 @@ class RequestTest(TestCase):
         cs.scaleVirtualMachine(id='a',
                                details={'cpunumber': 1000, 'memory': '640k'})
         get.assert_called_once_with(
-            'localhost', timeout=10, cert=None, verify=True, params={
+            'http://localhost', timeout=10, cert=None, verify=True, params={
                 'command': 'scaleVirtualMachine',
                 'response': 'json',
                 'id': 'a',
@@ -223,14 +223,14 @@ class RequestTest(TestCase):
 
     @patch("requests.get")
     def test_transform_empty(self, get):
-        cs = CloudStack(endpoint='localhost', key='foo', secret='bar')
+        cs = CloudStack(endpoint='http://localhost', key='foo', secret='bar')
         get.return_value.status_code = 200
         get.return_value.json.return_value = {
             'createnetworkresponse': {},
         }
         cs.createNetwork(name="", display_text="")
         get.assert_called_once_with(
-            'localhost', timeout=10, cert=None, verify=True, params={
+            'http://localhost', timeout=10, cert=None, verify=True, params={
                 'command': 'createNetwork',
                 'response': 'json',
                 'name': '',
@@ -243,7 +243,7 @@ class RequestTest(TestCase):
     @patch("requests.post")
     @patch("requests.get")
     def test_method(self, get, post):
-        cs = CloudStack(endpoint='localhost', key='foo', secret='bar',
+        cs = CloudStack(endpoint='http://localhost', key='foo', secret='bar',
                         method='post')
         post.return_value.status_code = 200
         post.return_value.json.return_value = {
@@ -252,7 +252,7 @@ class RequestTest(TestCase):
         cs.listVirtualMachines(blah='brah')
         self.assertEqual(get.call_args_list, [])
         self.assertEqual(post.call_args_list, [
-            call('localhost', timeout=10, verify=True, cert=None, data={
+            call('http://localhost', timeout=10, verify=True, cert=None, data={
                 'command': 'listVirtualMachines',
                 'blah': 'brah',
                 'apiKey': 'foo',
@@ -269,5 +269,5 @@ class RequestTest(TestCase):
                                             'uuidList': [],
                                             'cserrorcode': 9999,
                                             'errortext': 'Fail'}}
-        cs = CloudStack(endpoint='localhost', key='foo', secret='bar')
+        cs = CloudStack(endpoint='http://localhost', key='foo', secret='bar')
         self.assertRaises(CloudStackException, cs.listVirtualMachines)

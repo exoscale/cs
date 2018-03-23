@@ -12,7 +12,7 @@ except ImportError:  # python 2
 
 try:
     import pygments
-    from pygments.lexers import JsonLexer
+    from pygments.lexers import JsonLexer, XmlLexer
     from pygments.formatters import TerminalFormatter
 except ImportError:
     pygments = None
@@ -31,6 +31,13 @@ if sys.version_info >= (3, 5):
         from ._async import AIOCloudStack  # noqa
         __all__.append('AIOCloudStack')
 
+if sys.version_info >= (3, 6):
+    try:
+        import lxml.etree
+        from requests_xml import BaseParser
+    except ImportError:
+        pass
+
 
 def _format_json(data):
     """Pretty print a dict as a JSON, with colors if pygments is present."""
@@ -42,7 +49,25 @@ def _format_json(data):
     return output
 
 
-def main():
+def _format_xml(data):
+    """Pretty print the XML struct, with colors if pygments is present."""
+    if not isinstance(data, BaseParser):
+        output = []
+        for elem in data:
+            output.append(_format_xml(elem))
+        return ''.join(output)
+
+    output = lxml.etree.tostring(data.lxml, encoding=data.encoding,
+                                 pretty_print=True)
+
+    if pygments and sys.stdout.isatty():
+        return pygments.highlight(output, XmlLexer(), TerminalFormatter())
+
+    return output
+
+
+def _parser():
+    """Build the argument parser"""
     parser = argparse.ArgumentParser(description='Cloustack client.')
     parser.add_argument('--region', metavar='REGION',
                         help='Cloudstack region in ~/.cloudstack.ini',
@@ -67,6 +92,70 @@ def main():
                         nargs='*', type=parse_option,
                         help='Cloudstack API argument')
 
+    return parser
+
+
+def mainx():
+    """Just like main, but better"""
+    parser = _parser()
+
+    parser.add_argument('--xpath', metavar='XPATH',
+                        help='XPath query into the result')
+
+    parser.add_argument('--json', metavar='PARSER',
+                        help='convert XML to JSON using given serializer, '
+                             'e.g. yahoo')
+
+    options = parser.parse_args()
+    command = options.command
+    kwargs = defaultdict(set)
+    for arg in options.arguments:
+        key, value = arg
+        kwargs[key].add(value.strip(" \"'"))
+
+    try:
+        config = read_config(ini_group=options.region)
+    except NoSectionError:
+        raise SystemExit("Error: region '%s' not in config" % options.region)
+
+    if options.post:
+        config['method'] = 'post'
+    config['response'] = 'xml'
+
+    cs = CloudStack(**config)
+    ok = True
+    try:
+        response = getattr(cs, command)(**kwargs)
+    except CloudStackException as e:
+        response = e.args[1]
+        if not options.quiet:
+            sys.stderr.write("Cloudstack error: HTTP response "
+                             "{0}\n".format(response.status_code))
+
+        sys.stderr.write(response.text)
+        sys.stderr.write("\n")
+        sys.exit(1)
+
+    if options.xpath:
+        root = lxml.etree.Element("root")
+        root.set("xpath", options.xpath)
+        for child in response.xpath(options.xpath):
+            root.append(child.element)
+        response = BaseParser(element=root)
+
+    if options.json:
+        import xmljson
+        serializer = getattr(xmljson, options.json)
+        data = serializer.data(lxml.etree.fromstring(response.raw_xml))
+        sys.stdout.write(_format_json(data))
+        sys.stdout.write('\n')
+    else:
+        sys.stdout.write(_format_xml(response))
+    sys.exit(not ok)
+
+
+def main():
+    parser = _parser()
     options = parser.parse_args()
     command = options.command
     kwargs = defaultdict(set)
@@ -117,4 +206,4 @@ def main():
 
     sys.stdout.write(_format_json(response))
     sys.stdout.write('\n')
-    sys.exit(int(not ok))
+    sys.exit(not ok)
