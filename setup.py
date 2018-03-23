@@ -18,11 +18,18 @@ extras_require = {
 }
 tests_require = []
 
+console_scripts = ['cs = cs:main']
+
 if sys.version_info < (3, 0):
     tests_require.append("mock")
-elif sys.version_info >= (3, 5):
+
+if sys.version_info >= (3, 5):
     extras_require["async"] = ["aiohttp"]
     tests_require.append("aiohttp")
+
+if sys.version_info >= (3, 6):
+    extras_require['xml'] = ['requests-xml']
+    console_scripts.append('csx = cs:mainx')
 
 setup(
     name='cs',
@@ -55,8 +62,6 @@ setup(
     tests_require=tests_require,
     test_suite='tests',
     entry_points={
-        'console_scripts': [
-            'cs = cs:main',
-        ],
+        'console_scripts': console_scripts,
     },
 )
