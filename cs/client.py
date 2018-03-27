@@ -23,10 +23,12 @@ if PY2:
     text_type = unicode  # noqa
     string_type = basestring  # noqa
     integer_types = int, long  # noqa
+    binary_type = str
 else:
     text_type = str
     string_type = str
     integer_types = int
+    binary_type = bytes
 
 if sys.version_info >= (3, 5):
     try:
@@ -54,7 +56,7 @@ def transform(params):
             continue
         if isinstance(value, string_type):
             continue
-        if key == "userdata" and isinstance(value, bytes):
+        elif key == "userdata" and isinstance(value, binary_type):
             continue
         elif isinstance(value, integer_types):
             params[key] = text_type(value)
