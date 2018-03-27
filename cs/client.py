@@ -56,7 +56,7 @@ def transform(params):
             continue
         if isinstance(value, string_type):
             continue
-        elif key == "userdata" and isinstance(value, binary_type):
+        elif isinstance(value, binary_type):
             continue
         elif isinstance(value, integer_types):
             params[key] = text_type(value)
