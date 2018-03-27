@@ -188,7 +188,7 @@ class RequestTest(TestCase):
         }
         cs.listVirtualMachines(foo=["foo", "bar"],
                                bar=[{'baz': 'blah', 'foo': 1000}],
-                               bytes_param='blah'.encode('utf-8'))
+                               bytes_param=b'blah')
         get.assert_called_once_with(
             'localhost', timeout=10, cert=None, verify=True, params={
                 'command': 'listVirtualMachines',
@@ -196,7 +196,7 @@ class RequestTest(TestCase):
                 'bar[0].foo': '1000',
                 'bar[0].baz': 'blah',
                 'foo': 'foo,bar',
-                'bytes_param': 'blah'.encode('utf-8'),
+                'bytes_param': b'blah',
                 'apiKey': 'foo',
                 'signature': 'ImJ/5F0P2RDL7yn4LdLnGcEx5WE=',
             },

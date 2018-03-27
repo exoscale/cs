@@ -54,9 +54,7 @@ def transform(params):
         if value is None:
             params.pop(key)
             continue
-        if isinstance(value, string_type):
-            continue
-        elif isinstance(value, binary_type):
+        if isinstance(value, (string_type, binary_type)):
             continue
         elif isinstance(value, integer_types):
             params[key] = text_type(value)
