@@ -12,10 +12,16 @@ except ImportError:  # python 2
 
 try:
     import pygments
-    from pygments.lexers import JsonLexer
+    from pygments.lexers import JsonLexer, XmlLexer
     from pygments.formatters import TerminalFormatter
 except ImportError:
     pygments = None
+
+try:
+    from xmljson import parker as serializer
+    import lxml.etree
+except ImportError:
+    serializer = None
 
 from .client import read_config, CloudStack, CloudStackException  # noqa
 
@@ -42,6 +48,22 @@ def _format_json(data):
     return output
 
 
+def _format_xml(data, command):
+    """Pretty print a dict as XML, with colors if pygments is present."""
+    root = lxml.etree.Element(command.lower() + "response")
+    tree = serializer.etree(data, root=root)
+
+    output = lxml.etree.tostring(tree,
+                                 encoding="utf-8",
+                                 xml_declaration=False,
+                                 pretty_print=True).decode("utf-8")
+
+    if pygments and sys.stdout.isatty():
+        return pygments.highlight(output, XmlLexer(), TerminalFormatter())
+
+    return output
+
+
 def main():
     parser = argparse.ArgumentParser(description='Cloustack client.')
     parser.add_argument('--region', metavar='REGION',
@@ -54,6 +76,8 @@ def main():
                         help='do not wait for async result')
     parser.add_argument('--quiet', '-q', action='store_true', default=False,
                         help='do not display additional status messages')
+    parser.add_argument('--xml', action='store_true', default=False,
+                        help='convert output to XML')
     parser.add_argument('command', metavar="COMMAND",
                         help='Cloudstack API command to execute')
 
@@ -93,6 +117,7 @@ def main():
 
         try:
             response = json.loads(response.text)
+            ok = False
         except json.decoder.JSONDecodeError:
             sys.stderr.write(response.text)
             sys.stderr.write("\n")
@@ -115,6 +140,9 @@ def main():
                     sys.stderr.write("Result not ready yet.\n")
                 break
 
-    sys.stdout.write(_format_json(response))
-    sys.stdout.write('\n')
+    if ok and options.xml and serializer:
+        sys.stdout.write(_format_xml(response, command))
+    else:
+        sys.stdout.write(_format_json(response))
+        sys.stdout.write('\n')
     sys.exit(int(not ok))
