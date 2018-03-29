@@ -146,17 +146,20 @@ class RequestTest(TestCase):
             'listvirtualmachinesresponse': {},
         }
         machines = cs.listVirtualMachines(zoneId=2, templateId='3',
-                                          temPlateidd='4')
-        self.assertEqual(machines, {})
+                                          temPlateidd='4', pageSize='10',
+                                          fetch_list=True)
+        self.assertEqual(machines, [])
         get.assert_called_once_with(
             'localhost', timeout=20, verify=True, cert=None, params={
                 'apiKey': 'foo',
                 'response': 'json',
                 'command': 'listVirtualMachines',
-                'signature': 'dMRxAZcs2OPK15WUulzUtnrLWD0=',
+                'signature': 'mMS7XALuGkCXk7kj5SywySku0Z0=',
                 'templateId': '3',
                 'temPlateidd': '4',
-                'zoneId': '2'
+                'zoneId': '2',
+                'page': '1',
+                'pageSize': '10',
             },
         )
 

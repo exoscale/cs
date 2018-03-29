@@ -16,6 +16,7 @@ except ImportError:  # python 2
     from urllib import quote
 
 import requests
+from requests.structures import CaseInsensitiveDict
 
 PY2 = sys.version_info < (3, 0)
 
@@ -110,6 +111,7 @@ class CloudStack(object):
 
     def _prepare_request(self, command, json, opcode_name, fetch_list,
                          **kwargs):
+        kwargs = CaseInsensitiveDict(kwargs)
         kwargs.update({
             'apiKey': self.key,
             opcode_name: command,
@@ -120,7 +122,7 @@ class CloudStack(object):
             kwargs.setdefault('pagesize', 500)
 
         kwarg = 'params' if self.method == 'get' else 'data'
-        return kwarg, kwargs
+        return kwarg, dict(kwargs._store.values())
 
     def _request(self, command, json=True, opcode_name='command',
                  fetch_list=False, **kwargs):
