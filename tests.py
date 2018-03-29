@@ -129,7 +129,7 @@ class RequestTest(TestCase):
         self.assertEqual(machines, {})
         get.assert_called_once_with(
             'localhost', timeout=20, verify=True, cert=None, params={
-                'apiKey': 'foo',
+                'apikey': 'foo',
                 'response': 'json',
                 'command': 'listVirtualMachines',
                 'listall': 'true',
@@ -150,13 +150,13 @@ class RequestTest(TestCase):
         self.assertEqual(machines, {})
         get.assert_called_once_with(
             'localhost', timeout=20, verify=True, cert=None, params={
-                'apiKey': 'foo',
+                'apikey': 'foo',
                 'response': 'json',
                 'command': 'listVirtualMachines',
-                'signature': 'dMRxAZcs2OPK15WUulzUtnrLWD0=',
-                'templateId': '3',
-                'temPlateidd': '4',
-                'zoneId': '2'
+                'signature': 'fa6ow1Aigo0wXWK8a9T4ifiKkPk=',
+                'templateid': '3',
+                'templateidd': '4',
+                'zoneid': '2'
             },
         )
 
@@ -170,7 +170,7 @@ class RequestTest(TestCase):
         cs.listVirtualMachines(listall=1, unicode_param=u'éèààû')
         get.assert_called_once_with(
             'localhost', timeout=10, verify=True, cert=None, params={
-                'apiKey': 'foo',
+                'apikey': 'foo',
                 'response': 'json',
                 'command': 'listVirtualMachines',
                 'listall': '1',
@@ -197,7 +197,7 @@ class RequestTest(TestCase):
                 'bar[0].baz': 'blah',
                 'foo': 'foo,bar',
                 'bytes_param': b'blah',
-                'apiKey': 'foo',
+                'apikey': 'foo',
                 'signature': 'ImJ/5F0P2RDL7yn4LdLnGcEx5WE=',
             },
         )
@@ -218,7 +218,7 @@ class RequestTest(TestCase):
                 'id': 'a',
                 'details[0].cpunumber': '1000',
                 'details[0].memory': '640k',
-                'apiKey': 'foo',
+                'apikey': 'foo',
                 'signature': 'ZNl66z3gFhnsx2Eo3vvCIM0kAgI=',
             },
         )
@@ -237,7 +237,7 @@ class RequestTest(TestCase):
                 'response': 'json',
                 'name': '',
                 'display_text': '',
-                'apiKey': 'foo',
+                'apikey': 'foo',
                 'signature': 'CistTEiPt/4Rv1v4qSyILvPbhmg=',
             },
         )
@@ -257,7 +257,7 @@ class RequestTest(TestCase):
             call('localhost', timeout=10, verify=True, cert=None, data={
                 'command': 'listVirtualMachines',
                 'blah': 'brah',
-                'apiKey': 'foo',
+                'apikey': 'foo',
                 'response': 'json',
                 'signature': '58VvLSaVUqHnG9DhXNOAiDFwBoA=',
             })]

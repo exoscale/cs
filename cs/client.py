@@ -110,8 +110,9 @@ class CloudStack(object):
 
     def _prepare_request(self, command, json, opcode_name, fetch_list,
                          **kwargs):
+        kwargs = dict((k.lower(), v) for k, v in kwargs.items())
         kwargs.update({
-            'apiKey': self.key,
+            'apikey': self.key,
             opcode_name: command,
         })
         if json:
