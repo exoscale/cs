@@ -12,10 +12,15 @@ except ImportError:  # python 2
 
 try:
     import pygments
-    from pygments.lexers import JsonLexer
+    from pygments.lexers import JsonLexer, YamlLexer
     from pygments.formatters import TerminalFormatter
 except ImportError:
     pygments = None
+
+try:
+    import yaml
+except ImportError:
+    yaml = None
 
 from .client import read_config, CloudStack, CloudStackException  # noqa
 
@@ -42,6 +47,16 @@ def _format_json(data):
     return output
 
 
+def _format_yaml(data):
+    """Pretty print a dict as a YAML, with colors if pygments is present."""
+    output = yaml.safe_dump(data)
+
+    if pygments and sys.stdout.isatty():
+        return pygments.highlight(output, YamlLexer(), TerminalFormatter())
+
+    return output
+
+
 def main():
     parser = argparse.ArgumentParser(description='Cloustack client.')
     parser.add_argument('--region', metavar='REGION',
@@ -54,6 +69,8 @@ def main():
                         help='do not wait for async result')
     parser.add_argument('--quiet', '-q', action='store_true', default=False,
                         help='do not display additional status messages')
+    parser.add_argument('--yaml', '-y', action='store_true', default=False,
+                        help='convert output to YAML')
     parser.add_argument('command', metavar="COMMAND",
                         help='Cloudstack API command to execute')
 
@@ -115,6 +132,9 @@ def main():
                     sys.stderr.write("Result not ready yet.\n")
                 break
 
-    sys.stdout.write(_format_json(response))
-    sys.stdout.write('\n')
+    if options.yaml and yaml:
+        sys.stdout.write(_format_yaml(response))
+    else:
+        sys.stdout.write(_format_json(response))
+        sys.stdout.write('\n')
     sys.exit(int(not ok))
