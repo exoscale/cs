@@ -30,7 +30,7 @@ setup(
     url='https://github.com/exoscale/cs',
     license='BSD',
     author='Bruno Renié',
-    description=__doc__,
+    description=__doc__.strip(),
     long_description=long_description,
     packages=find_packages(exclude=['tests']),
     zip_safe=False,
