@@ -15,6 +15,7 @@ with open('README.rst', 'r', encoding='utf-8') as f:
 install_requires = ['requests']
 extras_require = {
     'highlight': ['pygments'],
+    'xml': ['xmljson'],
 }
 tests_require = []
 
