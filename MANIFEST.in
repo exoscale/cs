@@ -1,0 +1,2 @@
+recursive-include cs *.py
+include LICENSE
