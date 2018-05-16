@@ -1,3 +1,2 @@
-include *.py
+recursive-include cs *.py
 include LICENSE
-include tox.ini
