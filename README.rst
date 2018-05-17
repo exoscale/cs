@@ -7,11 +7,11 @@ CS
 
 .. image:: https://img.shields.io/pypi/l/cs.svg
    :alt: License
-   :target: https://pypi.python.org/pypi/cs
+   :target: https://pypi.org/project/cs/
 
 .. image:: https://img.shields.io/pypi/pyversions/cs.svg
    :alt: Python versions
-   :target: https://pypi.python.org/pypi/cs
+   :target: https://pypi.org/project/cs/
 
 A simple, yet powerful CloudStack API client for python and the command-line.
 
