@@ -239,4 +239,10 @@ def read_config(ini_group=None):
     except AttributeError:  # python 2
         cs_conf = dict(conf.items(ini_group))
     cs_conf['name'] = ini_group
-    return cs_conf
+
+    allowed_keys = ('endpoint', 'key', 'secret', 'timeout', 'method', 'verify',
+                    'cert', 'name', 'retry')
+
+    return dict(((k, v)
+                 for k, v in cs_conf.items()
+                 if k in allowed_keys))

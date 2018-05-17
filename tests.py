@@ -102,6 +102,7 @@ class ConfigTest(TestCase):
                     'endpoint = https://api.example.com/from-file\n'
                     'key = test key from file\n'
                     'secret = test secret from file\n'
+                    'theme = monokai\n'
                     'timeout = 50')
             self.addCleanup(partial(os.remove, '/tmp/cloudstack.ini'))
 
