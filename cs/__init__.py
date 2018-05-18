@@ -13,7 +13,8 @@ except ImportError:  # python 2
 try:
     import pygments
     from pygments.lexers import JsonLexer
-    from pygments.formatters import TerminalFormatter
+    from pygments.styles import get_style_by_name
+    from pygments.formatters import Terminal256Formatter
 except ImportError:
     pygments = None
 
@@ -32,12 +33,14 @@ if sys.version_info >= (3, 5):
         __all__.append('AIOCloudStack')
 
 
-def _format_json(data):
+def _format_json(data, theme):
     """Pretty print a dict as a JSON, with colors if pygments is present."""
     output = json.dumps(data, indent=2, sort_keys=True)
 
     if pygments and sys.stdout.isatty():
-        return pygments.highlight(output, JsonLexer(), TerminalFormatter())
+        style = get_style_by_name(theme)
+        formatter = Terminal256Formatter(style=style)
+        return pygments.highlight(output, JsonLexer(), formatter)
 
     return output
 
@@ -48,6 +51,10 @@ def main():
                         help='Cloudstack region in ~/.cloudstack.ini',
                         default=os.environ.get('CLOUDSTACK_REGION',
                                                'cloudstack'))
+    parser.add_argument('--theme', metavar='THEME',
+                        help='Pygments style',
+                        default=os.environ.get('CLOUDSTACK_THEME',
+                                               'default'))
     parser.add_argument('--post', action='store_true', default=False,
                         help='use POST instead of GET')
     parser.add_argument('--async', action='store_true', default=False,
@@ -78,6 +85,8 @@ def main():
         config = read_config(ini_group=options.region)
     except NoSectionError:
         raise SystemExit("Error: region '%s' not in config" % options.region)
+
+    theme = config.pop('theme', 'default')
 
     if options.post:
         config['method'] = 'post'
@@ -115,6 +124,6 @@ def main():
                     sys.stderr.write("Result not ready yet.\n")
                 break
 
-    sys.stdout.write(_format_json(response))
+    sys.stdout.write(_format_json(response, theme=theme))
     sys.stdout.write('\n')
     sys.exit(int(not ok))

@@ -241,7 +241,7 @@ def read_config(ini_group=None):
     cs_conf['name'] = ini_group
 
     allowed_keys = ('endpoint', 'key', 'secret', 'timeout', 'method', 'verify',
-                    'cert', 'name', 'retry')
+                    'cert', 'name', 'retry', 'theme')
 
     return dict(((k, v)
                  for k, v in cs_conf.items()
