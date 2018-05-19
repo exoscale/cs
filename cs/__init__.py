@@ -107,7 +107,7 @@ def main():
             sys.stderr.write("\n")
             sys.exit(1)
 
-    if 'Async' not in command and 'jobid' in response and not options.async:
+    if 'Async' not in command and 'jobid' in response and not hasattr(options, 'async'):
         if not options.quiet:
             sys.stderr.write("Polling result... ^C to abort\n")
         while True:

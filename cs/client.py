@@ -33,7 +33,7 @@ else:
 
 if sys.version_info >= (3, 5):
     try:
-        from cs.async import AIOCloudStack  # noqa
+        from . import AIOCloudStack  # noqa
     except ImportError:
         pass
 
