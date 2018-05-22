@@ -26,7 +26,7 @@ elif sys.version_info >= (3, 5):
 
 setup(
     name='cs',
-    version='2.1.6',
+    version='2.2',
     url='https://github.com/exoscale/cs',
     license='BSD',
     author='Bruno Renié',
