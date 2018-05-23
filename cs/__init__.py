@@ -52,7 +52,7 @@ def _format_json(data, theme):
     return output
 
 
-def _format_xml(data):
+def _format_xml(data, theme):
     """Pretty print the XML struct, with colors if pygments is present."""
     if not isinstance(data, BaseParser):
         output = []
@@ -64,7 +64,9 @@ def _format_xml(data):
                                  pretty_print=True)
 
     if pygments and sys.stdout.isatty():
-        return pygments.highlight(output, XmlLexer(), TerminalFormatter())
+        style = get_style_by_name(theme)
+        formatter = Terminal256Formatter(style=style)
+        return pygments.highlight(output, XmlLexer(), Terminal256Formatter(style=style))
 
     return output
 
@@ -129,6 +131,8 @@ def mainx():
         config['method'] = 'post'
     config['response'] = 'xml'
 
+    theme = config.pop('theme', 'default')
+
     cs = CloudStack(**config)
     ok = True
     try:
@@ -154,10 +158,10 @@ def mainx():
         import xmljson
         serializer = getattr(xmljson, options.json)
         data = serializer.data(lxml.etree.fromstring(response.raw_xml))
-        sys.stdout.write(_format_json(data))
+        sys.stdout.write(_format_json(data, theme=theme))
         sys.stdout.write('\n')
     else:
-        sys.stdout.write(_format_xml(response))
+        sys.stdout.write(_format_xml(response, theme=theme))
     sys.exit(not ok)
 
 
