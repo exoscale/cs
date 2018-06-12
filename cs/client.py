@@ -10,21 +10,23 @@ import sys
 import time
 from datetime import datetime, timedelta
 from distutils.util import strtobool
+from typing import Any, Dict, List, Optional, Tuple, Union  # noqa
 
 try:
     from configparser import ConfigParser
 except ImportError:  # python 2
-    from ConfigParser import ConfigParser
+    from ConfigParser import ConfigParser  # type: ignore
 
 try:
     from urllib.parse import quote
 except ImportError:  # python 2
-    from urllib import quote
+    from urllib import quote  # type: ignore
 
 import pytz
 
 import requests
 from requests.structures import CaseInsensitiveDict
+
 
 PY2 = sys.version_info < (3, 0)
 
@@ -133,11 +135,25 @@ class CloudStackException(Exception):
 
 
 class CloudStack(object):
-    def __init__(self, endpoint, key, secret, timeout=10, method='get',
-                 verify=None, cert=None, name=None, retry=0,
-                 job_timeout=None, poll_interval=POLL_INTERVAL,
-                 expiration=timedelta(minutes=10), trace=False,
-                 dangerous_no_tls_verify=False):
+    verify = True  # type: Union[str,bool]
+
+    def __init__(self,
+                 endpoint,
+                 key,
+                 secret,
+                 timeout=10,        # type: Union[str,int]
+                 method='get',
+                 verify=None,       # type: Optional[str]
+                 cert=None,         # type: Optional[str]
+                 name=None,         # type: Optional[str]
+                 retry=0,           # type: Union[str,int]
+                 job_timeout=None,  # type: Optional[int]
+                 poll_interval=POLL_INTERVAL,
+                 expiration=timedelta(minutes=10),
+                 trace=False,                   # type: bool
+                 dangerous_no_tls_verify=False  # type: bool
+                 ):
+        # type: (...) -> None
         self.endpoint = endpoint
         self.key = key
         self.secret = secret
@@ -194,7 +210,7 @@ class CloudStack(object):
 
         done = False
         max_retry = self.retry
-        final_data = []
+        final_data = []  # type: List[Any]
         page = 1
         while not done:
             if fetch_list:
@@ -433,14 +449,14 @@ def read_config(ini_group=None):
             env_conf[key] = value
 
     # overrides means we have a .ini to read
-    overrides = os.getenv('CLOUDSTACK_OVERRIDES', '').strip()
+    overrides_value = os.getenv('CLOUDSTACK_OVERRIDES', '').strip()
 
-    if not overrides and set(env_conf).issuperset(REQUIRED_CONFIG_KEYS):
+    if not overrides_value and set(env_conf).issuperset(REQUIRED_CONFIG_KEYS):
         return env_conf
 
     ini_conf = read_config_from_ini(ini_group)
 
-    overrides = {s.lower() for s in re.split(r'\W+', overrides)}
+    overrides = {s.lower() for s in re.split(r'\W+', overrides_value)}
     config = dict(dict(env_conf, **ini_conf),
                   **{k: v for k, v in env_conf.items() if k in overrides})
 
