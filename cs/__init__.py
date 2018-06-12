@@ -4,11 +4,12 @@ import os
 import sys
 import time
 from collections import defaultdict
+from typing import MutableMapping  # noqa
 
 try:
     from configparser import NoSectionError
 except ImportError:  # python 2
-    from ConfigParser import NoSectionError
+    from ConfigParser import NoSectionError  # type: ignore
 
 try:
     import pygments
@@ -76,7 +77,7 @@ def main():
 
     options = parser.parse_args()
     command = options.command
-    kwargs = defaultdict(set)
+    kwargs = defaultdict(set)  # type: MutableMapping[str,set]
     for arg in options.arguments:
         key, value = arg
         kwargs[key].add(value.strip(" \"'"))

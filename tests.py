@@ -72,7 +72,7 @@ class ConfigTest(TestCase):
                 'verify': True,
                 'cert': None,
                 'name': None,
-                'retry': 0,
+                'retry': '0',
             })
 
         with env(CLOUDSTACK_KEY='test key from env',

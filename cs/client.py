@@ -4,16 +4,18 @@ import hashlib
 import hmac
 import os
 import sys
+from distutils.util import strtobool
+from typing import Any, Dict, List, Optional, Tuple, Union  # noqa
 
 try:
     from configparser import ConfigParser
 except ImportError:  # python 2
-    from ConfigParser import ConfigParser
+    from ConfigParser import ConfigParser  # type: ignore
 
 try:
     from urllib.parse import quote
 except ImportError:  # python 2
-    from urllib import quote
+    from urllib import quote  # type: ignore
 
 import requests
 from requests.structures import CaseInsensitiveDict
@@ -91,8 +93,18 @@ class Unauthorized(CloudStackException):
 
 
 class CloudStack(object):
-    def __init__(self, endpoint, key, secret, timeout=10, method='get',
-                 verify=True, cert=None, name=None, retry=0):
+    def __init__(self,
+                 endpoint,
+                 key,
+                 secret,
+                 timeout=10,   # type: Union[str,int]
+                 method='get',
+                 verify=True,  # type: Union[str,bool]
+                 cert=None,    # type: Optional[str]
+                 name=None,    # type: Optional[str]
+                 retry=0,      # type: Union[str,int]
+                 ):
+        # type: (...) -> None
         self.endpoint = endpoint
         self.key = key
         self.secret = secret
@@ -133,7 +145,7 @@ class CloudStack(object):
 
         done = False
         max_retry = self.retry
-        final_data = []
+        final_data = []  # type: List[Any]
         page = 1
         while not done:
             if fetch_list:
@@ -212,28 +224,35 @@ def read_config(ini_group=None):
     os.environ.setdefault('CLOUDSTACK_METHOD', 'get')
     os.environ.setdefault('CLOUDSTACK_TIMEOUT', '10')
     keys = ['endpoint', 'key', 'secret', 'method', 'timeout']
-    env_conf = {}
+    env_conf = {}  # type: Dict[str, Any]
     for key in keys:
         if 'CLOUDSTACK_{0}'.format(key.upper()) not in os.environ:
             break
         else:
             env_conf[key] = os.environ['CLOUDSTACK_{0}'.format(key.upper())]
     else:
-        env_conf['verify'] = os.environ.get('CLOUDSTACK_VERIFY', True)
+        verify = True  # type: Union[str,bool]
+        v = os.environ.get('CLOUDSTACK_VERIFY', 'true')
+        try:
+            verify = bool(strtobool(v))
+        except ValueError:
+            verify = v
+        env_conf['verify'] = verify
         env_conf['cert'] = os.environ.get('CLOUDSTACK_CERT', None)
         env_conf['name'] = None
-        env_conf['retry'] = os.environ.get('CLOUDSTACK_RETRY', 0)
+        env_conf['retry'] = os.environ.get('CLOUDSTACK_RETRY', '0')
+
         return env_conf
 
     # Config file: $PWD/cloudstack.ini or $HOME/.cloudstack.ini
     # Last read wins in configparser
-    paths = (
+    paths = [
         os.path.join(os.path.expanduser('~'), '.cloudstack.ini'),
         os.path.join(os.getcwd(), 'cloudstack.ini'),
-    )
+    ]
     # Look at CLOUDSTACK_CONFIG first if present
     if 'CLOUDSTACK_CONFIG' in os.environ:
-        paths += (os.path.expanduser(os.environ['CLOUDSTACK_CONFIG']),)
+        paths.append(os.path.expanduser(os.environ['CLOUDSTACK_CONFIG']))
     if not any([os.path.exists(c) for c in paths]):
         raise SystemExit("Config file not found. Tried {0}".format(
             ", ".join(paths)))

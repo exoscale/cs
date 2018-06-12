@@ -20,7 +20,10 @@ tests_require = []
 
 if sys.version_info < (3, 0):
     tests_require.append("mock")
-elif sys.version_info >= (3, 5):
+
+if sys.version_info < (3, 5):
+    install_requires.append('typing')
+else:
     extras_require["async"] = ["aiohttp"]
     tests_require.append("aiohttp")
 
