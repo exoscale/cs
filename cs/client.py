@@ -125,9 +125,9 @@ class CloudStack(object):
         return kwarg, dict(kwargs._store.values())
 
     def _request(self, command, json=True, opcode_name='command',
-                 fetch_list=False, **kwargs):
-        kwarg, kwargs = self._prepare_request(command, json, opcode_name,
-                                              fetch_list, **kwargs)
+                 fetch_list=False, headers=None, **params):
+        kind, params = self._prepare_request(command, json, opcode_name,
+                                             fetch_list, **params)
 
         done = False
         max_retry = self.retry
@@ -135,18 +135,19 @@ class CloudStack(object):
         page = 1
         while not done:
             if fetch_list:
-                kwargs['page'] = page
+                params['page'] = page
 
-            kwargs = transform(kwargs)
-            kwargs.pop('signature', None)
-            kwargs['signature'] = self._sign(kwargs)
+            params = transform(params)
+            params.pop('signature', None)
+            params['signature'] = self._sign(params)
 
             try:
                 response = getattr(requests, self.method)(self.endpoint,
+                                                          headers=headers,
                                                           timeout=self.timeout,
                                                           verify=self.verify,
                                                           cert=self.cert,
-                                                          **{kwarg: kwargs})
+                                                          **{kind: params})
             except requests.exceptions.ConnectionError:
                 max_retry -= 1
                 if (

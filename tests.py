@@ -128,10 +128,15 @@ class RequestTest(TestCase):
         get.return_value.json.return_value = {
             'listvirtualmachinesresponse': {},
         }
-        machines = cs.listVirtualMachines(listall='true')
+        machines = cs.listVirtualMachines(listall='true',
+                                          headers={'Accept-Encoding': 'br'})
         self.assertEqual(machines, {})
         get.assert_called_once_with(
-            'localhost', timeout=20, verify=True, cert=None, params={
+            'localhost', timeout=20, verify=True, cert=None,
+            headers={
+                'Accept-Encoding': 'br',
+            },
+            params={
                 'apiKey': 'foo',
                 'response': 'json',
                 'command': 'listVirtualMachines',
@@ -153,7 +158,8 @@ class RequestTest(TestCase):
                                           fetch_list=True)
         self.assertEqual(machines, [])
         get.assert_called_once_with(
-            'localhost', timeout=20, verify=True, cert=None, params={
+            'localhost', timeout=20, verify=True, cert=None, headers=None,
+            params={
                 'apiKey': 'foo',
                 'response': 'json',
                 'command': 'listVirtualMachines',
@@ -175,7 +181,8 @@ class RequestTest(TestCase):
         }
         cs.listVirtualMachines(listall=1, unicode_param=u'éèààû')
         get.assert_called_once_with(
-            'localhost', timeout=10, verify=True, cert=None, params={
+            'localhost', timeout=10, verify=True, cert=None, headers=None,
+            params={
                 'apiKey': 'foo',
                 'response': 'json',
                 'command': 'listVirtualMachines',
@@ -196,7 +203,8 @@ class RequestTest(TestCase):
                                bar=[{'baz': 'blah', 'foo': 1000}],
                                bytes_param=b'blah')
         get.assert_called_once_with(
-            'localhost', timeout=10, cert=None, verify=True, params={
+            'localhost', timeout=10, cert=None, verify=True, headers=None,
+            params={
                 'command': 'listVirtualMachines',
                 'response': 'json',
                 'bar[0].foo': '1000',
@@ -218,7 +226,8 @@ class RequestTest(TestCase):
         cs.scaleVirtualMachine(id='a',
                                details={'cpunumber': 1000, 'memory': '640k'})
         get.assert_called_once_with(
-            'localhost', timeout=10, cert=None, verify=True, params={
+            'localhost', timeout=10, cert=None, verify=True, headers=None,
+            params={
                 'command': 'scaleVirtualMachine',
                 'response': 'json',
                 'id': 'a',
@@ -238,7 +247,8 @@ class RequestTest(TestCase):
         }
         cs.createNetwork(name="", display_text="")
         get.assert_called_once_with(
-            'localhost', timeout=10, cert=None, verify=True, params={
+            'localhost', timeout=10, cert=None, verify=True, headers=None,
+            params={
                 'command': 'createNetwork',
                 'response': 'json',
                 'name': '',
@@ -260,13 +270,16 @@ class RequestTest(TestCase):
         cs.listVirtualMachines(blah='brah')
         self.assertEqual(get.call_args_list, [])
         self.assertEqual(post.call_args_list, [
-            call('localhost', timeout=10, verify=True, cert=None, data={
-                'command': 'listVirtualMachines',
-                'blah': 'brah',
-                'apiKey': 'foo',
-                'response': 'json',
-                'signature': '58VvLSaVUqHnG9DhXNOAiDFwBoA=',
-            })]
+            call(
+                'localhost', timeout=10, verify=True, cert=None, headers=None,
+                data={
+                   'command': 'listVirtualMachines',
+                   'blah': 'brah',
+                   'apiKey': 'foo',
+                   'response': 'json',
+                   'signature': '58VvLSaVUqHnG9DhXNOAiDFwBoA=',
+                }
+            )]
         )
 
     @patch("requests.get")
