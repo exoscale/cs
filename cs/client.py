@@ -7,6 +7,9 @@ import sys
 from distutils.util import strtobool
 from typing import Any, Dict, List, Optional, Tuple, Union  # noqa
 
+import requests
+from requests.structures import CaseInsensitiveDict
+
 try:
     from configparser import ConfigParser
 except ImportError:  # python 2
@@ -17,8 +20,6 @@ try:
 except ImportError:  # python 2
     from urllib import quote  # type: ignore
 
-import requests
-from requests.structures import CaseInsensitiveDict
 
 PY2 = sys.version_info < (3, 0)
 
