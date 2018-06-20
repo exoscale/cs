@@ -1,5 +1,8 @@
-cs.egg-info
 dist
-.tox
 build
+.coverage
+.eggs
+.tox
+*.egg-info
 *.pyc
+.*_cache

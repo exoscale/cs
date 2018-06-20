@@ -16,7 +16,11 @@ install_requires = ['pytz', 'requests']
 extras_require = {
     'highlight': ['pygments'],
 }
-tests_require = []
+tests_require = [
+    'pytest',
+    'pytest-cache',
+    'pytest-cov',
+]
 
 if sys.version_info < (3, 0):
     tests_require.append("mock")
@@ -50,10 +54,10 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
     ),
+    setup_requires=['pytest-runner'],
     install_requires=install_requires,
     extras_require=extras_require,
     tests_require=tests_require,
-    test_suite='tests',
     entry_points={
         'console_scripts': [
             'cs = cs:main',
