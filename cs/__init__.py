@@ -102,7 +102,7 @@ def main():
 
         try:
             response = json.loads(response.text)
-        except json.decoder.JSONDecodeError:
+        except ValueError:
             sys.stderr.write(response.text)
             sys.stderr.write("\n")
             sys.exit(1)
