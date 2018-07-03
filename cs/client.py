@@ -37,6 +37,8 @@ if sys.version_info >= (3, 5):
     except ImportError:
         pass
 
+PAGE_SIZE = 500
+
 
 def cs_encode(value):
     """
@@ -119,7 +121,7 @@ class CloudStack(object):
         if json:
             kwargs['response'] = 'json'
         if 'page' in kwargs or fetch_list:
-            kwargs.setdefault('pagesize', 500)
+            kwargs.setdefault('pagesize', PAGE_SIZE)
 
         kwarg = 'params' if self.method == 'get' else 'data'
         return kwarg, dict(kwargs._store.values())
@@ -180,6 +182,8 @@ class CloudStack(object):
                 else:
                     final_data.extend(data[key])
                     page += 1
+                    if len(final_data) >= data.get('count', PAGE_SIZE):
+                        done = True
             else:
                 final_data = data
                 done = True
