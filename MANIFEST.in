@@ -1,2 +1,2 @@
-recursive-include cs *.py
+recursive-include cs *.py *.pyi
 include LICENSE

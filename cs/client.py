@@ -135,25 +135,12 @@ class CloudStackException(Exception):
 
 
 class CloudStack(object):
-    verify = True  # type: Union[str,bool]
+    verify = True
 
-    def __init__(self,
-                 endpoint,
-                 key,
-                 secret,
-                 timeout=10,        # type: Union[str,int]
-                 method='get',
-                 verify=None,       # type: Optional[str]
-                 cert=None,         # type: Optional[str]
-                 name=None,         # type: Optional[str]
-                 retry=0,           # type: Union[str,int]
-                 job_timeout=None,  # type: Optional[int]
-                 poll_interval=POLL_INTERVAL,
-                 expiration=timedelta(minutes=10),
-                 trace=False,                   # type: bool
-                 dangerous_no_tls_verify=False  # type: bool
-                 ):
-        # type: (...) -> None
+    def __init__(self, endpoint, key, secret, timeout=10, method='get',
+                 verify=None, cert=None, name=None, retry=0, job_timeout=None,
+                 poll_interval=POLL_INTERVAL, expiration=timedelta(minutes=10),
+                 trace=False, dangerous_no_tls_verify=False):
         self.endpoint = endpoint
         self.key = key
         self.secret = secret
@@ -210,7 +197,7 @@ class CloudStack(object):
 
         done = False
         max_retry = self.retry
-        final_data = []  # type: List[Any]
+        final_data = []  # type: List[Dict]
         page = 1
         while not done:
             if fetch_list:
@@ -271,12 +258,11 @@ class CloudStack(object):
                     if len(final_data) >= data.get('count', PAGE_SIZE):
                         done = True
             elif fetch_result and 'jobid' in data:
-                final_data = self._jobresult(jobid=data['jobid'],
-                                             headers=headers)
-                done = True
+                return self._jobresult(jobid=data['jobid'],
+                                       headers=headers)
             else:
-                final_data = data
-                done = True
+                return data
+
         return final_data
 
     def _response_value(self, response, json=True):
