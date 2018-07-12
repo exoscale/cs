@@ -113,18 +113,18 @@ class CloudStack(object):
 
     def _prepare_request(self, command, json, opcode_name, fetch_list,
                          **kwargs):
-        kwargs = CaseInsensitiveDict(kwargs)
-        kwargs.update({
+        params = CaseInsensitiveDict(**kwargs)
+        params.update({
             'apiKey': self.key,
             opcode_name: command,
         })
         if json:
-            kwargs['response'] = 'json'
+            params['response'] = 'json'
         if 'page' in kwargs or fetch_list:
-            kwargs.setdefault('pagesize', PAGE_SIZE)
+            params.setdefault('pagesize', PAGE_SIZE)
 
-        kwarg = 'params' if self.method == 'get' else 'data'
-        return kwarg, dict(kwargs._store.values())
+        kind = 'params' if self.method == 'get' else 'data'
+        return kind, {k: v for k, v in params.items()}
 
     def _request(self, command, json=True, opcode_name='command',
                  fetch_list=False, headers=None, **params):
