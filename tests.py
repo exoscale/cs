@@ -3,17 +3,16 @@ from __future__ import unicode_literals
 
 import os
 import sys
-
 from contextlib import contextmanager
 from functools import partial
 from unittest import TestCase
+
+from cs import CloudStack, CloudStackException, read_config
 
 try:
     from unittest.mock import patch, call
 except ImportError:
     from mock import patch, call
-
-from cs import CloudStack, CloudStackException, read_config
 
 
 @contextmanager
@@ -72,7 +71,7 @@ class ConfigTest(TestCase):
                 'verify': True,
                 'cert': None,
                 'name': None,
-                'retry': 0,
+                'retry': '0',
             })
 
         with env(CLOUDSTACK_KEY='test key from env',

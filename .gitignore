@@ -1,5 +1,6 @@
 cs.egg-info
-dist
-.tox
 build
+dist
+.mypy_cache
+.tox
 *.pyc
