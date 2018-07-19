@@ -249,16 +249,13 @@ def read_from_ini(ini_group):
     if 'CLOUDSTACK_CONFIG' in os.environ:
         paths += (os.path.expanduser(os.environ['CLOUDSTACK_CONFIG']),)
 
-    if not any([os.path.exists(c) for c in paths]):
-        raise SystemExit("Config file not found. Tried {0}".format(
-            ", ".join(paths)))
-
     conf = ConfigParser()
     conf.read(paths)
-    try:
-        cs_conf = conf[ini_group]
-    except AttributeError:  # python 2
-        cs_conf = dict(conf.items(ini_group))
+
+    if not conf.has_section(ini_group):
+        return dict()
+
+    cs_conf = dict(conf.items(ini_group))
     cs_conf['name'] = ini_group
 
     return dict(((k, v)
