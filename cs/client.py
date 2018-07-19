@@ -39,6 +39,19 @@ if sys.version_info >= (3, 5):
 
 PAGE_SIZE = 500
 
+ALLOWED_CONFIGS = {
+    'endpoint': None,
+    'key': None,
+    'secret': None,
+    'timeout': 10,
+    'method': 'get',
+    'verify': False,
+    'cert': None,
+    'name': None,
+    'retry': 0,
+    'theme': None,
+}
+
 
 def cs_encode(value):
     """
@@ -205,26 +218,27 @@ class CloudStack(object):
         return base64.b64encode(digest).decode('utf-8').strip()
 
 
+def read_env_vars():
+    env_conf = {}
+    for key, default_value in ALLOWED_CONFIGS.items():
+        env_key = 'CLOUDSTACK_{0}'.format(key.upper())
+        if env_key in os.environ:
+            env_conf[key] = os.environ[env_key]
+        else:
+            env_conf[key] = default_value
+    return env_conf
+
+
 def read_config(ini_group=None):
+    config = {}
     if not ini_group:
         ini_group = os.environ.get('CLOUDSTACK_REGION', 'cloudstack')
-    # Try env vars first
-    os.environ.setdefault('CLOUDSTACK_METHOD', 'get')
-    os.environ.setdefault('CLOUDSTACK_TIMEOUT', '10')
-    keys = ['endpoint', 'key', 'secret', 'method', 'timeout']
-    env_conf = {}
-    for key in keys:
-        if 'CLOUDSTACK_{0}'.format(key.upper()) not in os.environ:
-            break
-        else:
-            env_conf[key] = os.environ['CLOUDSTACK_{0}'.format(key.upper())]
-    else:
-        env_conf['verify'] = os.environ.get('CLOUDSTACK_VERIFY', True)
-        env_conf['cert'] = os.environ.get('CLOUDSTACK_CERT', None)
-        env_conf['name'] = None
-        env_conf['retry'] = os.environ.get('CLOUDSTACK_RETRY', 0)
-        return env_conf
+    config.update(read_env_vars())
+    config.update(read_from_ini(ini_group))
+    return config
 
+
+def read_from_ini(ini_group):
     # Config file: $PWD/cloudstack.ini or $HOME/.cloudstack.ini
     # Last read wins in configparser
     paths = (
@@ -234,9 +248,11 @@ def read_config(ini_group=None):
     # Look at CLOUDSTACK_CONFIG first if present
     if 'CLOUDSTACK_CONFIG' in os.environ:
         paths += (os.path.expanduser(os.environ['CLOUDSTACK_CONFIG']),)
+
     if not any([os.path.exists(c) for c in paths]):
         raise SystemExit("Config file not found. Tried {0}".format(
             ", ".join(paths)))
+
     conf = ConfigParser()
     conf.read(paths)
     try:
@@ -245,9 +261,6 @@ def read_config(ini_group=None):
         cs_conf = dict(conf.items(ini_group))
     cs_conf['name'] = ini_group
 
-    allowed_keys = ('endpoint', 'key', 'secret', 'timeout', 'method', 'verify',
-                    'cert', 'name', 'retry', 'theme')
-
     return dict(((k, v)
                  for k, v in cs_conf.items()
-                 if k in allowed_keys))
+                 if k in ALLOWED_CONFIGS.keys()))
