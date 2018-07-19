@@ -73,6 +73,7 @@ class ConfigTest(TestCase):
                 'cert': None,
                 'name': None,
                 'retry': 0,
+                'theme': None,
             })
 
         with env(CLOUDSTACK_KEY='test key from env',
@@ -94,6 +95,37 @@ class ConfigTest(TestCase):
                 'cert': '/path/to/cert.pem',
                 'name': None,
                 'retry': '5',
+                'theme': None,
+            })
+
+    def test_env_var_combined_with_dir_config(self):
+        # Secret is missing in ini file
+        with open('/tmp/cloudstack.ini', 'w') as f:
+            f.write('[hanibal]\n'
+                    'endpoint = https://api.example.com/from-file\n'
+                    'key = test key from file\n'
+                    'theme = monokai\n'
+                    'other = please ignore me\n'
+                    'timeout = 50')
+            self.addCleanup(partial(os.remove, '/tmp/cloudstack.ini'))
+
+        # Secret gets read from env var
+        with env(CLOUDSTACK_ENDPOINT='https://api.example.com/from-env',
+                 CLOUDSTACK_SECRET='test secret from env',
+                 CLOUDSTACK_REGION='hanibal',
+                 CLOUDSTACK_KEY='test key from env'), cwd('/tmp'):
+            conf = read_config()
+            self.assertEqual(dict(conf), {
+                'endpoint': 'https://api.example.com/from-file',
+                'key': 'test key from file',
+                'secret': 'test secret from env',
+                'theme': 'monokai',
+                'timeout': '50',
+                'name': 'hanibal',
+                'verify': True,
+                'retry': 0,
+                'method': 'get',
+                'cert': None,
             })
 
     def test_current_dir_config(self):
@@ -116,6 +148,10 @@ class ConfigTest(TestCase):
                 'theme': 'monokai',
                 'timeout': '50',
                 'name': 'cloudstack',
+                'verify': True,
+                'retry': 0,
+                'method': 'get',
+                'cert': None,
             })
 
 

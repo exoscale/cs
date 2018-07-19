@@ -43,9 +43,9 @@ ALLOWED_CONFIGS = {
     'endpoint': None,
     'key': None,
     'secret': None,
-    'timeout': 10,
+    'timeout': '10',
     'method': 'get',
-    'verify': False,
+    'verify': True,
     'cert': None,
     'name': None,
     'retry': 0,
@@ -222,10 +222,7 @@ def read_env_vars():
     env_conf = {}
     for key, default_value in ALLOWED_CONFIGS.items():
         env_key = 'CLOUDSTACK_{0}'.format(key.upper())
-        if env_key in os.environ:
-            env_conf[key] = os.environ[env_key]
-        else:
-            env_conf[key] = default_value
+        env_conf[key] = os.environ.get(env_key, default_value)
     return env_conf
 
 
@@ -260,4 +257,4 @@ def read_from_ini(ini_group):
 
     return dict(((k, v)
                  for k, v in cs_conf.items()
-                 if k in ALLOWED_CONFIGS.keys()))
+                 if k in ALLOWED_CONFIGS))
