@@ -47,7 +47,7 @@ ALLOWED_CONFIGS = {
     'method': 'get',
     'verify': True,
     'cert': None,
-    'name': None,
+    'name': 'cloudstack',
     'retry': 0,
     'theme': None,
 }
@@ -218,24 +218,7 @@ class CloudStack(object):
         return base64.b64encode(digest).decode('utf-8').strip()
 
 
-def read_env_vars():
-    env_conf = {}
-    for key, default_value in ALLOWED_CONFIGS.items():
-        env_key = 'CLOUDSTACK_{0}'.format(key.upper())
-        env_conf[key] = os.environ.get(env_key, default_value)
-    return env_conf
-
-
-def read_config(ini_group=None):
-    config = {}
-    if not ini_group:
-        ini_group = os.environ.get('CLOUDSTACK_REGION', 'cloudstack')
-    config.update(read_env_vars())
-    config.update(read_from_ini(ini_group))
-    return config
-
-
-def read_from_ini(ini_group):
+def read_config_from_ini(ini_group):
     # Config file: $PWD/cloudstack.ini or $HOME/.cloudstack.ini
     # Last read wins in configparser
     paths = (
@@ -249,12 +232,24 @@ def read_from_ini(ini_group):
     conf = ConfigParser()
     conf.read(paths)
 
+    if not ini_group:
+        ini_group = os.environ.get('CLOUDSTACK_REGION',
+                                   ALLOWED_CONFIGS['name'])
+
     if not conf.has_section(ini_group):
-        return dict()
+        # Only return a real name if section was found
+        return dict(name=None)
 
-    cs_conf = dict(conf.items(ini_group))
-    cs_conf['name'] = ini_group
+    ini_config = dict(conf.items(ini_group))
+    ini_config['name'] = ini_group
+    return ini_config
 
-    return dict(((k, v)
-                 for k, v in cs_conf.items()
-                 if k in ALLOWED_CONFIGS))
+
+def read_config(ini_group=None):
+    ini_config = read_config_from_ini(ini_group)
+    result_config = {}
+    for ini_key, default_value in ALLOWED_CONFIGS.items():
+        env_key = 'CLOUDSTACK_{0}'.format(ini_key.upper())
+        result_config[ini_key] = os.environ.get(
+            env_key, ini_config.get(ini_key, default_value))
+    return result_config

@@ -112,11 +112,10 @@ class ConfigTest(TestCase):
         # Secret gets read from env var
         with env(CLOUDSTACK_ENDPOINT='https://api.example.com/from-env',
                  CLOUDSTACK_SECRET='test secret from env',
-                 CLOUDSTACK_REGION='hanibal',
-                 CLOUDSTACK_KEY='test key from env'), cwd('/tmp'):
+                 CLOUDSTACK_REGION='hanibal'), cwd('/tmp'):
             conf = read_config()
             self.assertEqual(dict(conf), {
-                'endpoint': 'https://api.example.com/from-file',
+                'endpoint': 'https://api.example.com/from-env',
                 'key': 'test key from file',
                 'secret': 'test secret from env',
                 'theme': 'monokai',
