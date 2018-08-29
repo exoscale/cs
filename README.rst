@@ -184,10 +184,16 @@ Async client
 
 .. code-block:: python
 
+    import asyncio
     from cs import AIOCloudStack, read_config
 
     cs = AIOCloudStack(**read_config())
-    vms = await cs.listVirtualMachines()
+
+    async def main():
+       vms = await cs.listVirtualMachines(fetch_list=True)
+       print(vms)
+
+    asyncio.run(main())
 
 By default, this client polls CloudStack's async jobs to return actual results
 for commands that result in an async job being created. You can customize this
@@ -207,27 +213,22 @@ ________________________________
     from cs import AIOCloudStack, read_config
 
     cs = AIOCloudStack(**read_config())
-    tasks = [asyncio.ensure_future(cs.deployVirtualMachine(zoneid='',
-                                                           serviceofferingid='',
-                                                           templateid='')) for _ in range(5)]
-    results = []
-    done, pending = await asyncio.wait(tasks)
-    exceptions = 0
-    last_exception = None
-    for t in done:
-        if t.exception():
-            exceptions += 1
-            last_exception = t.exception()
-        elif t.result():
-            results.append(t.result())
-    if exceptions:
-        print(f"{exceptions} deployment(s) failed")
-        raise last_exception
 
-    # Destroy all of them, but skip waiting on the job results
-    tasks = [cs.destroyVirtualMachine(id=vm['id'], fetch_result=False)
-             for vm in results]
-    await asyncio.wait(tasks)
+    machine = {"zoneid": ..., "serviceofferingid": ..., "templateid": ...}
+
+    async def main():
+       tasks = asyncio.gather(*(cs.deployVirtualMachine(name=f"vm-{i}", **machine)
+                                for i in range(5)))
+
+       results = await asyncio.wait_for(tasks, 60.0)
+
+       # Destroy all of them, but skip waiting on the job results
+       tasks = asyncio.gather(*(cs.destroyVirtualMachine(id=result['virtualmachine']['id'],
+                                                         fetch_result=False)
+                                for result in results))
+       await asyncio.wait_for(tasks, 10.0)
+
+    asyncio.run(main())
 
 Links
 -----

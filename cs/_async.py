@@ -8,11 +8,10 @@ from .client import transform
 
 
 class AIOCloudStack(CloudStack):
-    def __init__(self, job_timeout=None, poll_interval=2.0,
-                 *args, **kwargs):
+    def __init__(self, *args, **kwargs):
+        self.job_timeout = kwargs.pop('job_timeout', None)
+        self.poll_interval = kwargs.pop('poll_interval', 2.0)
         super().__init__(*args, **kwargs)
-        self.job_timeout = job_timeout
-        self.poll_interval = poll_interval
 
     def __getattr__(self, command):
         async def handler(**kwargs):
