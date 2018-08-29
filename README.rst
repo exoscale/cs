@@ -220,13 +220,12 @@ ________________________________
        tasks = asyncio.gather(*(cs.deployVirtualMachine(name=f"vm-{i}", **machine)
                                 for i in range(5)))
 
-       results = await asyncio.wait_for(tasks, 60.0)
+       results = await tasks
 
        # Destroy all of them, but skip waiting on the job results
-       tasks = asyncio.gather(*(cs.destroyVirtualMachine(id=result['virtualmachine']['id'],
-                                                         fetch_result=False)
-                                for result in results))
-       await asyncio.wait_for(tasks, 10.0)
+       await asyncio.gather(*(cs.destroyVirtualMachine(id=result['virtualmachine']['id'],
+                                                       fetch_result=False)
+                              for result in results))
 
     asyncio.run(main())
 
