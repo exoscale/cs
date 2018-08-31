@@ -4,6 +4,7 @@ import hashlib
 import hmac
 import os
 import sys
+from datetime import datetime, timedelta
 
 try:
     from configparser import ConfigParser
@@ -15,6 +16,7 @@ try:
 except ImportError:  # python 2
     from urllib import quote
 
+import pytz
 import requests
 from requests.structures import CaseInsensitiveDict
 
@@ -38,6 +40,7 @@ if sys.version_info >= (3, 5):
         pass
 
 PAGE_SIZE = 500
+EXPIRES_FORMAT = "%Y-%m-%dT%H:%M:%S%z"
 
 
 def cs_encode(value):
@@ -92,7 +95,8 @@ class Unauthorized(CloudStackException):
 
 class CloudStack(object):
     def __init__(self, endpoint, key, secret, timeout=10, method='get',
-                 verify=True, cert=None, name=None, retry=0):
+                 verify=True, cert=None, name=None, retry=0,
+                 expiration=timedelta(minutes=10)):
         self.endpoint = endpoint
         self.key = key
         self.secret = secret
@@ -102,6 +106,9 @@ class CloudStack(object):
         self.cert = cert
         self.name = name
         self.retry = int(retry)
+        if not hasattr(expiration, "seconds"):
+            expiration = timedelta(seconds=int(expiration))
+        self.expiration = expiration
 
     def __repr__(self):
         return '<CloudStack: {0}>'.format(self.name or self.endpoint)
@@ -122,6 +129,11 @@ class CloudStack(object):
             params['response'] = 'json'
         if 'page' in kwargs or fetch_list:
             params.setdefault('pagesize', PAGE_SIZE)
+        if 'expires' not in params and self.expiration.total_seconds() >= 0:
+            params['signatureVersion'] = '3'
+            tz = pytz.utc
+            expires = tz.localize(datetime.utcnow() + self.expiration)
+            params['expires'] = expires.astimezone(tz).strftime(EXPIRES_FORMAT)
 
         kind = 'params' if self.method == 'get' else 'data'
         return kind, {k: v for k, v in params.items()}
@@ -211,7 +223,8 @@ def read_config(ini_group=None):
     # Try env vars first
     os.environ.setdefault('CLOUDSTACK_METHOD', 'get')
     os.environ.setdefault('CLOUDSTACK_TIMEOUT', '10')
-    keys = ['endpoint', 'key', 'secret', 'method', 'timeout']
+    os.environ.setdefault('CLOUDSTACK_EXPIRATION', '600')
+    keys = ['endpoint', 'key', 'secret', 'method', 'timeout', 'expiration']
     env_conf = {}
     for key in keys:
         if 'CLOUDSTACK_{0}'.format(key.upper()) not in os.environ:
@@ -246,7 +259,7 @@ def read_config(ini_group=None):
     cs_conf['name'] = ini_group
 
     allowed_keys = ('endpoint', 'key', 'secret', 'timeout', 'method', 'verify',
-                    'cert', 'name', 'retry', 'theme')
+                    'cert', 'name', 'retry', 'theme', 'expiration')
 
     return dict(((k, v)
                  for k, v in cs_conf.items()

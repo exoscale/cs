@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 
 import os
 import sys
+import datetime
 
 from contextlib import contextmanager
 from functools import partial
@@ -14,6 +15,7 @@ except ImportError:
     from mock import patch, call
 
 from cs import CloudStack, CloudStackException, read_config
+from cs.client import EXPIRES_FORMAT
 
 
 @contextmanager
@@ -67,6 +69,7 @@ class ConfigTest(TestCase):
                 'key': 'test key from env',
                 'secret': 'test secret from env',
                 'endpoint': 'https://api.example.com/from-env',
+                'expiration': '600',
                 'method': 'get',
                 'timeout': '10',
                 'verify': True,
@@ -88,6 +91,7 @@ class ConfigTest(TestCase):
                 'key': 'test key from env',
                 'secret': 'test secret from env',
                 'endpoint': 'https://api.example.com/from-env',
+                'expiration': '600',
                 'method': 'post',
                 'timeout': '99',
                 'verify': '/path/to/ca.pem',
@@ -123,7 +127,7 @@ class RequestTest(TestCase):
     @patch('requests.get')
     def test_request_params(self, get):
         cs = CloudStack(endpoint='localhost', key='foo', secret='bar',
-                        timeout=20)
+                        timeout=20, expiration=-1)
         get.return_value.status_code = 200
         get.return_value.json.return_value = {
             'listvirtualmachinesresponse': {},
@@ -148,7 +152,7 @@ class RequestTest(TestCase):
     @patch('requests.get')
     def test_request_params_casing(self, get):
         cs = CloudStack(endpoint='localhost', key='foo', secret='bar',
-                        timeout=20)
+                        timeout=20, expiration=-1)
         get.return_value.status_code = 200
         get.return_value.json.return_value = {
             'listvirtualmachinesresponse': {},
@@ -174,7 +178,8 @@ class RequestTest(TestCase):
 
     @patch('requests.get')
     def test_encoding(self, get):
-        cs = CloudStack(endpoint='localhost', key='foo', secret='bar')
+        cs = CloudStack(endpoint='localhost', key='foo', secret='bar',
+                        expiration=-1)
         get.return_value.status_code = 200
         get.return_value.json.return_value = {
             'listvirtualmachinesresponse': {},
@@ -194,7 +199,8 @@ class RequestTest(TestCase):
 
     @patch("requests.get")
     def test_transform(self, get):
-        cs = CloudStack(endpoint='localhost', key='foo', secret='bar')
+        cs = CloudStack(endpoint='localhost', key='foo', secret='bar',
+                        expiration=-1)
         get.return_value.status_code = 200
         get.return_value.json.return_value = {
             'listvirtualmachinesresponse': {},
@@ -218,7 +224,8 @@ class RequestTest(TestCase):
 
     @patch("requests.get")
     def test_transform_dict(self, get):
-        cs = CloudStack(endpoint='localhost', key='foo', secret='bar')
+        cs = CloudStack(endpoint='localhost', key='foo', secret='bar',
+                        expiration=-1)
         get.return_value.status_code = 200
         get.return_value.json.return_value = {
             'scalevirtualmachineresponse': {},
@@ -240,7 +247,8 @@ class RequestTest(TestCase):
 
     @patch("requests.get")
     def test_transform_empty(self, get):
-        cs = CloudStack(endpoint='localhost', key='foo', secret='bar')
+        cs = CloudStack(endpoint='localhost', key='foo', secret='bar',
+                        expiration=-1)
         get.return_value.status_code = 200
         get.return_value.json.return_value = {
             'createnetworkresponse': {},
@@ -262,7 +270,7 @@ class RequestTest(TestCase):
     @patch("requests.get")
     def test_method(self, get, post):
         cs = CloudStack(endpoint='localhost', key='foo', secret='bar',
-                        method='post')
+                        method='post', expiration=-1)
         post.return_value.status_code = 200
         post.return_value.json.return_value = {
             'listvirtualmachinesresponse': {},
@@ -292,3 +300,22 @@ class RequestTest(TestCase):
                                             'errortext': 'Fail'}}
         cs = CloudStack(endpoint='localhost', key='foo', secret='bar')
         self.assertRaises(CloudStackException, cs.listVirtualMachines)
+
+    @patch("requests.get")
+    def test_signature_v3(self, get):
+        cs = CloudStack(endpoint='localhost', key='foo', secret='bar',
+                        expiration=600)
+        get.return_value.status_code = 200
+        get.return_value.json.return_value = {
+            'createnetworkresponse': {},
+        }
+        cs.createNetwork(name="", display_text="")
+
+        _, kwargs = get.call_args
+        params = kwargs['params']
+        assert '3' == params['signatureVersion'], kwargs
+
+        # we ignore the timezone for Python2's lack of %z
+        expires = datetime.datetime.strptime(params['expires'][:19],
+                                             EXPIRES_FORMAT[:-2])
+        assert expires > datetime.datetime.utcnow(), params['expires']

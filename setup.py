@@ -12,7 +12,7 @@ from setuptools import find_packages, setup
 with open('README.rst', 'r', encoding='utf-8') as f:
     long_description = f.read()
 
-install_requires = ['requests']
+install_requires = ['pytz', 'requests']
 extras_require = {
     'highlight': ['pygments'],
 }
