@@ -138,6 +138,10 @@ seconds). The default value is 10.
 (integer) can be used to retry ``list`` and ``queryAsync`` requests on
 failure. The default value is 0, meaning no retry.
 
+``CLOUDSTACK_EXPIRATION`` or the ``expiration`` entry in the configuration file
+(integer) can be used to set how long a signature is valid. By default, it picks
+10 minutes but may be deactivated using any negative value, e.g. -1.
+
 Multiple credentials can be set in ``.cloudstack.ini``. This allows selecting
 the credentials or endpoint to use with a command-line flag.
 
