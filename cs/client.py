@@ -43,26 +43,37 @@ PAGE_SIZE = 500
 EXPIRES_FORMAT = "%Y-%m-%dT%H:%M:%S%z"
 
 
-def cs_encode(value):
+def cs_encode(s):
+    """Encode URI component like CloudStack would do before signing.
+
+    java.net.URLEncoder.encode(s).replace('+', '%20')
     """
-    Try to behave like cloudstack, which uses
-    java.net.URLEncoder.encode(stuff).replace('+', '%20').
-    """
-    if isinstance(value, int):
-        value = str(value)
-    elif PY2 and isinstance(value, text_type):
-        value = value.encode('utf-8')
-    return quote(value, safe=".-*_")
+    if PY2 and isinstance(s, text_type):
+        s = s.encode("utf-8")
+    return quote(s, safe="*")
 
 
 def transform(params):
+    """
+    Transforms an heterogeneous map of params into a CloudStack
+    ready mapping of parameter to values.
+
+    It handles lists and dicts.
+
+    >>> p = {"a": 1, "b": "foo", "c": ["eggs", "spam"], "d": {"key": "value"}}
+    >>> transform(p)
+    >>> print(p)
+    {'a': '1', 'b': 'foo', 'c': 'eggs,spam', 'd[0].key': 'value'}
+    """
     for key, value in list(params.items()):
         if value is None:
             params.pop(key)
             continue
+
         if isinstance(value, (string_type, binary_type)):
             continue
-        elif isinstance(value, integer_types):
+
+        if isinstance(value, integer_types):
             params[key] = text_type(value)
         elif isinstance(value, (list, tuple, set, dict)):
             if not value:
@@ -82,7 +93,6 @@ def transform(params):
                             params[k] = text_type(v)
         else:
             raise ValueError(type(value))
-    return params
 
 
 class CloudStackException(Exception):
@@ -136,7 +146,7 @@ class CloudStack(object):
             params['expires'] = expires.astimezone(tz).strftime(EXPIRES_FORMAT)
 
         kind = 'params' if self.method == 'get' else 'data'
-        return kind, {k: v for k, v in params.items()}
+        return kind, dict(params.items())
 
     def _request(self, command, json=True, opcode_name='command',
                  fetch_list=False, headers=None, **params):
@@ -151,7 +161,7 @@ class CloudStack(object):
             if fetch_list:
                 params['page'] = page
 
-            params = transform(params)
+            transform(params)
             params.pop('signature', None)
             params['signature'] = self._sign(params)
 
@@ -203,17 +213,21 @@ class CloudStack(object):
 
     def _sign(self, data):
         """
-        Computes a signature string according to the CloudStack
+        Compute a signature string according to the CloudStack
         signature method (hmac/sha1).
         """
-        params = "&".join(sorted([
+
+        # Python2/3 urlencode aren't good enough for this task.
+        params = "&".join(
             "=".join((key, cs_encode(value)))
-            for key, value in data.items()
-        ])).lower()
+            for key, value in sorted(data.items())
+        )
+
         digest = hmac.new(
             self.secret.encode('utf-8'),
-            msg=params.encode('utf-8'),
+            msg=params.lower().encode('utf-8'),
             digestmod=hashlib.sha1).digest()
+
         return base64.b64encode(digest).decode('utf-8').strip()
 
 
