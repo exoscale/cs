@@ -72,7 +72,7 @@ class AIOCloudStack(CloudStack):
                     else:
                         final_data.extend(data[key])
                         page += 1
-                if fetch_result and 'jobid' in data:
+                elif fetch_result and 'jobid' in data:
                     try:
                         final_data = await asyncio.wait_for(
                             self._jobresult(data['jobid']),
