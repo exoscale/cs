@@ -41,7 +41,7 @@ class AIOCloudStack(CloudStack):
                 if fetch_list:
                     kwargs['page'] = page
 
-                kwargs = transform(kwargs)
+                transform(kwargs)
                 kwargs.pop('signature', None)
                 kwargs['signature'] = self._sign(kwargs)
                 response = await handler(self.endpoint, **{kwarg: kwargs})
