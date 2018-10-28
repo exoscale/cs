@@ -60,7 +60,7 @@ DEFAULT_CONFIG = {
     "cert": None,
     "name": None,
     "expiration": 600,
-    "poll_interval": 2.0,
+    "poll_interval": POLL_INTERVAL,
     "trace": None,
 }
 
@@ -255,12 +255,16 @@ class CloudStack(object):
                     if len(final_data) >= data.get('count', PAGE_SIZE):
                         done = True
             elif fetch_result and 'jobid' in data:
+                kill_switch = threading.Event()
                 results = []
                 t = threading.Thread(target=self._jobresult,
-                                     args=(data['jobid'], results))
+                                     args=(data['jobid'],
+                                           kill_switch,
+                                           results))
                 try:
                     t.start()
                     t.join(timeout=self.job_timeout)
+                    kill_switch.set()
                 except RuntimeError:
                     raise CloudStackException(
                         "Timeout waiting for async job result",
@@ -276,14 +280,14 @@ class CloudStack(object):
                 done = True
         return final_data
 
-    def _jobresult(self, jobid, result=[]):
+    def _jobresult(self, jobid, kill_switch, result=[]):
         """Poll the async job result.
 
         To be run via in a Thread, the result is put within
         the result list which is a hack.
         """
         failures = 0
-        while True:
+        while not kill_switch.is_set():
             try:
                 j = self.queryAsyncJobResult(jobid=jobid)
                 failures = 0
@@ -305,7 +309,7 @@ class CloudStack(object):
                     result.append(e)
                     break
 
-            time.sleep(self.poll_interval)
+            kill_switch.wait(self.poll_interval)
 
     def _sign(self, data):
         """
