@@ -8,18 +8,13 @@ from .client import transform
 
 
 class AIOCloudStack(CloudStack):
-    def __init__(self, *args, **kwargs):
-        self.job_timeout = kwargs.pop('job_timeout', None)
-        self.poll_interval = kwargs.pop('poll_interval', 2.0)
-        super().__init__(*args, **kwargs)
-
     def __getattr__(self, command):
-        async def handler(**kwargs):
-            return (await self._request(command, **kwargs))
+        def handler(**kwargs):
+            return self._request(command, **kwargs)
         return handler
 
     async def _request(self, command, json=True, opcode_name='command',
-                       fetch_list=False, fetch_result=True, **kwargs):
+                       fetch_list=False, fetch_result=False, **kwargs):
         kwarg, kwargs = self._prepare_request(command, json, opcode_name,
                                               fetch_list, **kwargs)
 
@@ -91,14 +86,13 @@ class AIOCloudStack(CloudStack):
         failures = 0
         while True:
             try:
-                j = await self.queryAsyncJobResult(jobid=jobid,
-                                                   fetch_result=False)
+                j = await self.queryAsyncJobResult(jobid=jobid)
                 failures = 0
                 if j['jobstatus'] != 0:
                     if j['jobresultcode'] != 0 or j['jobstatus'] != 1:
                         raise CloudStackException("Job failure", j)
                     if 'jobresult' not in j:
-                        raise CloudStackException("Unkonwn job result", j)
+                        raise CloudStackException("Unknown job result", j)
                     return j['jobresult']
 
             except CloudStackException:

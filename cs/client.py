@@ -42,12 +42,16 @@ if sys.version_info >= (3, 5):
     except ImportError:
         pass
 
+
+TIMEOUT = 10
 PAGE_SIZE = 500
+POLL_INTERVAL = 2.0
+EXPIRATION = timedelta(minutes=10)
 EXPIRES_FORMAT = "%Y-%m-%dT%H:%M:%S%z"
 
 REQUIRED_CONFIG_KEYS = {"endpoint", "key", "secret", "method", "timeout"}
 ALLOWED_CONFIG_KEYS = {"verify", "cert", "retry", "theme", "expiration",
-                       "trace"}
+                       "poll_interval", "trace"}
 DEFAULT_CONFIG = {
     "timeout": 10,
     "method": "get",
@@ -56,6 +60,7 @@ DEFAULT_CONFIG = {
     "cert": None,
     "name": None,
     "expiration": 600,
+    "poll_interval": 2.0,
     "trace": None,
 }
 
@@ -123,6 +128,7 @@ class Unauthorized(CloudStackException):
 class CloudStack(object):
     def __init__(self, endpoint, key, secret, timeout=10, method='get',
                  verify=True, cert=None, name=None, retry=0,
+                 job_timeout=None, poll_interval=POLL_INTERVAL,
                  expiration=timedelta(minutes=10), trace=False):
         self.endpoint = endpoint
         self.key = key
@@ -133,6 +139,8 @@ class CloudStack(object):
         self.cert = cert
         self.name = name
         self.retry = int(retry)
+        self.job_timeout = job_timeout
+        self.poll_interval = float(poll_interval)
         if not hasattr(expiration, "seconds"):
             expiration = timedelta(seconds=int(expiration))
         self.expiration = expiration
@@ -167,7 +175,8 @@ class CloudStack(object):
         return kind, dict(params.items())
 
     def _request(self, command, json=True, opcode_name='command',
-                 fetch_list=False, headers=None, **params):
+                 fetch_list=False, fetch_result=False, headers=None,
+                 **params):
         kind, params = self._prepare_request(command, json, opcode_name,
                                              fetch_list, **params)
 
@@ -245,10 +254,58 @@ class CloudStack(object):
                     page += 1
                     if len(final_data) >= data.get('count', PAGE_SIZE):
                         done = True
+            elif fetch_result and 'jobid' in data:
+                results = []
+                t = threading.Thread(target=self._jobresult,
+                                     args=(data['jobid'], results))
+                try:
+                    t.start()
+                    t.join(timeout=self.job_timeout)
+                except RuntimeError:
+                    raise CloudStackException(
+                        "Timeout waiting for async job result",
+                        data['jobid'])
+
+                [result] = results
+                if isinstance(result, Exception):
+                    raise result
+                final_data = result
+                done = True
             else:
                 final_data = data
                 done = True
         return final_data
+
+    def _jobresult(self, jobid, result=[]):
+        """Poll the async job result.
+
+        To be run via in a Thread, the result is put within
+        the result list which is a hack.
+        """
+        failures = 0
+        while True:
+            try:
+                j = self.queryAsyncJobResult(jobid=jobid)
+                failures = 0
+                if j['jobstatus'] != 0:
+                    if j['jobresultcode'] != 0 or j['jobstatus'] != 1:
+                        raise CloudStackException("Job failure", j)
+                    if 'jobresult' not in j:
+                        raise CloudStackException("Unknown job result", j)
+                    result.append(j['jobresult'])
+                    break
+
+            except CloudStackException as e:
+                result.append(e)
+                break
+
+            except Exception as e:
+                failures += 1
+                if failures > 10:
+                    result.append(e)
+                    break
+
+            time.sleep(self.poll_interval)
 
     def _sign(self, data):
         """

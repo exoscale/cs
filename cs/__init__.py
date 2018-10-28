@@ -2,7 +2,6 @@ import argparse
 import json
 import os
 import sys
-import time
 from collections import defaultdict
 
 try:
@@ -91,6 +90,8 @@ def main():
 
     theme = config.pop('theme', 'default')
 
+    fetch_result = 'Async' not in command and not getattr(options, 'async')
+
     if options.post:
         config['method'] = 'post'
     if options.trace:
@@ -98,7 +99,8 @@ def main():
     cs = CloudStack(**config)
     ok = True
     try:
-        response = getattr(cs, command)(**kwargs)
+        response = getattr(cs, command)(fetch_result=fetch_result,
+                                        **kwargs)
     except CloudStackException as e:
         response = e.args[1]
         if not options.quiet:
@@ -111,24 +113,6 @@ def main():
             sys.stderr.write(response.text)
             sys.stderr.write("\n")
             sys.exit(1)
-
-    if 'Async' not in command and 'jobid' in response and not getattr(
-            options, 'async'):
-        if not options.quiet:
-            sys.stderr.write("Polling result... ^C to abort\n")
-        while True:
-            try:
-                res = cs.queryAsyncJobResult(**response)
-                if res['jobstatus'] != 0:
-                    response = res
-                    if res['jobresultcode'] != 0:
-                        ok = False
-                    break
-                time.sleep(3)
-            except KeyboardInterrupt:
-                if not options.quiet:
-                    sys.stderr.write("Result not ready yet.\n")
-                break
 
     sys.stdout.write(_format_json(response, theme=theme))
     sys.stdout.write('\n')

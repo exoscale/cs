@@ -138,6 +138,11 @@ seconds). The default value is 10.
 (integer) can be used to retry ``list`` and ``queryAsync`` requests on
 failure. The default value is 0, meaning no retry.
 
+``CLOUDSTACK_JOB_TIMEOUT`` or the `job_timeout`` entry in the configuration file
+(float) can be used to set how long an async call is retried assuming ``fetch_result`` is set to true). The default value is ``None``, it waits for ever.
+
+``CLOUDSTACK_POLL_INTERVAL`` or the ``poll_interval`` entry in the configuration file (float) can be used to set how frequently polling an async job result is done. The default value is 2.
+
 ``CLOUDSTACK_EXPIRATION`` or the ``expiration`` entry in the configuration file
 (integer) can be used to set how long a signature is valid. By default, it picks
 10 minutes but may be deactivated using any negative value, e.g. -1.
@@ -210,16 +215,7 @@ Async client
 
     asyncio.run(main())
 
-By default, this client polls CloudStack's async jobs to return actual results
-for commands that result in an async job being created. You can customize this
-behavior with ``job_timeout`` (default: None -- wait indefinitely) and
-``poll_interval`` (default: 2s).
-
-.. code-block:: python
-
-    cs = AIOCloudStack(**read_config(), job_timeout=300, poll_interval=5)
-
-Async deployment of multiple vms
+Async deployment of multiple VMs
 ________________________________
 
 .. code-block:: python
@@ -232,14 +228,15 @@ ________________________________
     machine = {"zoneid": ..., "serviceofferingid": ..., "templateid": ...}
 
     async def main():
-       tasks = asyncio.gather(*(cs.deployVirtualMachine(name=f"vm-{i}", **machine)
+       tasks = asyncio.gather(*(cs.deployVirtualMachine(name=f"vm-{i}",
+                                                        **machine,
+                                                        fetch_result=True)
                                 for i in range(5)))
 
        results = await tasks
 
        # Destroy all of them, but skip waiting on the job results
-       await asyncio.gather(*(cs.destroyVirtualMachine(id=result['virtualmachine']['id'],
-                                                       fetch_result=False)
+       await asyncio.gather(*(cs.destroyVirtualMachine(id=result['virtualmachine']['id'])
                               for result in results))
 
     asyncio.run(main())
