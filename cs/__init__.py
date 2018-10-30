@@ -44,7 +44,7 @@ def _format_json(data, theme):
     return output
 
 
-def main():
+def main(args=None):
     parser = argparse.ArgumentParser(description='Cloustack client.')
     parser.add_argument('--region', '-r', metavar='REGION',
                         help='Cloudstack region in ~/.cloudstack.ini',
@@ -76,7 +76,7 @@ def main():
                         nargs='*', type=parse_option,
                         help='Cloudstack API argument')
 
-    options = parser.parse_args()
+    options = parser.parse_args(args=args)
     command = options.command
     kwargs = defaultdict(set)
     for arg in options.arguments:
@@ -102,18 +102,25 @@ def main():
         response = getattr(cs, command)(fetch_result=fetch_result,
                                         **kwargs)
     except CloudStackException as e:
-        response = e.args[1]
-        if not options.quiet:
-            sys.stderr.write("Cloudstack error: HTTP response "
-                             "{0}\n".format(response.status_code))
+        message, args = (e.args[0], e.args[1:])
+        if len(args) > 0 and hasattr(args[0], 'status_code'):
+            response = args[0]
 
-        try:
-            response = json.loads(response.text)
-        except ValueError:
-            sys.stderr.write(response.text)
-            sys.stderr.write("\n")
-            sys.exit(1)
+            if not options.quiet:
+                sys.stderr.write("Cloudstack error: HTTP response "
+                                 "{0}\n".format(response.status_code))
+
+            try:
+                response = json.loads(response.text)
+                ok = False
+            except ValueError:
+                sys.stderr.write(response.text)
+                sys.stderr.write("\n")
+                return 1
+        else:
+            sys.stderr.write("Error: {0} {1}\n".format(message, args))
+            return 1
 
     sys.stdout.write(_format_json(response, theme=theme))
     sys.stdout.write('\n')
-    sys.exit(int(not ok))
+    return not ok

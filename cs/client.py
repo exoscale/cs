@@ -139,7 +139,7 @@ class CloudStack(object):
         self.cert = cert
         self.name = name
         self.retry = int(retry)
-        self.job_timeout = job_timeout
+        self.job_timeout = int(job_timeout) if job_timeout else 0
         self.poll_interval = float(poll_interval)
         if not hasattr(expiration, "seconds"):
             expiration = timedelta(seconds=int(expiration))
@@ -177,6 +177,9 @@ class CloudStack(object):
     def _request(self, command, json=True, opcode_name='command',
                  fetch_list=False, fetch_result=False, headers=None,
                  **params):
+        # timeout can be parametrised (internal usage mostly)
+        timeout = params.pop('_timeout', self.timeout)
+
         kind, params = self._prepare_request(command, json, opcode_name,
                                              fetch_list, **params)
 
@@ -209,7 +212,7 @@ class CloudStack(object):
             try:
                 with requests.Session() as session:
                     response = session.send(prepped,
-                                            timeout=self.timeout,
+                                            timeout=timeout,
                                             verify=self.verify,
                                             cert=self.cert)
 
@@ -255,61 +258,50 @@ class CloudStack(object):
                     if len(final_data) >= data.get('count', PAGE_SIZE):
                         done = True
             elif fetch_result and 'jobid' in data:
-                kill_switch = threading.Event()
-                results = []
-                t = threading.Thread(target=self._jobresult,
-                                     args=(data['jobid'],
-                                           kill_switch,
-                                           results))
-                try:
-                    t.start()
-                    t.join(timeout=self.job_timeout)
-                    kill_switch.set()
-                except RuntimeError:
-                    raise CloudStackException(
-                        "Timeout waiting for async job result",
-                        data['jobid'])
-
-                [result] = results
-                if isinstance(result, Exception):
-                    raise result
-                final_data = result
+                final_data = self._jobresult(jobid=data['jobid'])
                 done = True
             else:
                 final_data = data
                 done = True
         return final_data
 
-    def _jobresult(self, jobid, kill_switch, result=[]):
+    def _jobresult(self, jobid):
         """Poll the async job result.
 
         To be run via in a Thread, the result is put within
         the result list which is a hack.
         """
         failures = 0
-        while not kill_switch.is_set():
+
+        total_time = self.job_timeout or 2**30
+        remaining = timedelta(seconds=total_time)
+        endtime = datetime.now() + remaining
+
+        while remaining.total_seconds() > 1:
+            timeout = max(min(self.timeout, remaining.total_seconds()), 1)
             try:
-                j = self.queryAsyncJobResult(jobid=jobid)
+                j = self.queryAsyncJobResult(jobid=jobid,
+                                             _timeout=timeout)
                 failures = 0
                 if j['jobstatus'] != 0:
                     if j['jobresultcode'] != 0 or j['jobstatus'] != 1:
                         raise CloudStackException("Job failure", j)
                     if 'jobresult' not in j:
                         raise CloudStackException("Unknown job result", j)
-                    result.append(j['jobresult'])
-                    break
+                    return j['jobresult']
 
             except CloudStackException as e:
-                result.append(e)
-                break
+                raise e
 
             except Exception as e:
                 failures += 1
                 if failures > 10:
-                    result.append(e)
-                    break
+                    raise e
 
-            kill_switch.wait(self.poll_interval)
+            remaining = endtime - datetime.now()
+
+        raise CloudStackException("Timeout waiting for async job result",
+                                  jobid)
 
     def _sign(self, data):
         """
