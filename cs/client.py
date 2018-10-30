@@ -302,5 +302,5 @@ def read_config(ini_group=None):
     if None in (config.get(k) for k in REQUIRED_CONFIG_KEYS):
         missings = (k for k in REQUIRED_CONFIG_KEYS if not config.get(k))
         raise ValueError("the configuration is missing the following keys: "
-                          ", ".join(missings))
+                         ", ".join(missings))
     return config
