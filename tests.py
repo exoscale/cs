@@ -118,7 +118,7 @@ class ConfigTest(TestCase):
                  CLOUDSTACK_REGION='hanibal',
                  CLOUDSTACK_OVERRIDES='endpoint,secret'), cwd('/tmp'):
             conf = read_config()
-            self.assertEqual(dict(conf), {
+            self.assertEqual(conf, {
                 'endpoint': 'https://api.example.com/from-env',
                 'key': 'test key from file',
                 'secret': 'test secret from env',
@@ -145,7 +145,7 @@ class ConfigTest(TestCase):
 
         with cwd('/tmp'):
             conf = read_config()
-            self.assertEqual(dict(conf), {
+            self.assertEqual(conf, {
                 'endpoint': 'https://api.example.com/from-file',
                 'key': 'test key from file',
                 'secret': 'test secret from file',

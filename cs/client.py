@@ -43,8 +43,8 @@ if sys.version_info >= (3, 5):
 PAGE_SIZE = 500
 EXPIRES_FORMAT = "%Y-%m-%dT%H:%M:%S%z"
 
-REQUIRED_CONFIG_KEYS = "endpoint", "key", "secret", "method", "timeout"
-ALLOWED_CONFIG_KEYS = "verify", "cert", "retry", "theme", "expiration"
+REQUIRED_CONFIG_KEYS = {"endpoint", "key", "secret", "method", "timeout"}
+ALLOWED_CONFIG_KEYS = {"verify", "cert", "retry", "theme", "expiration"}
 DEFAULT_CONFIG = {
     "timeout": 10,
     "method": "get",
@@ -268,7 +268,7 @@ def read_config_from_ini(ini_group=None):
 
     ini_config = {k: v
                   for k, v in conf.items(ini_group)
-                  if k in REQUIRED_CONFIG_KEYS + ALLOWED_CONFIG_KEYS}
+                  if k in REQUIRED_CONFIG_KEYS.union(ALLOWED_CONFIG_KEYS)}
     ini_config["name"] = ini_group
     return ini_config
 
@@ -281,7 +281,7 @@ def read_config(ini_group=None):
     those with the cloudstack.ini file.
     """
     env_conf = dict(DEFAULT_CONFIG)
-    for key in REQUIRED_CONFIG_KEYS + ALLOWED_CONFIG_KEYS:
+    for key in REQUIRED_CONFIG_KEYS.union(ALLOWED_CONFIG_KEYS):
         env_key = "CLOUDSTACK_{0}".format(key.upper())
         value = os.getenv(env_key)
         if value:
@@ -290,17 +290,17 @@ def read_config(ini_group=None):
     # overrides means we have a .ini to read
     overrides = os.getenv('CLOUDSTACK_OVERRIDES', '').strip()
 
-    if not overrides and all(k in env_conf for k in REQUIRED_CONFIG_KEYS):
+    if not overrides and set(env_conf).issuperset(REQUIRED_CONFIG_KEYS):
         return env_conf
 
     ini_conf = read_config_from_ini(ini_group)
 
-    overrides = [s.lower() for s in re.split(r'\W+', overrides)]
+    overrides = {s.lower() for s in re.split(r'\W+', overrides)}
     config = dict(dict(env_conf, **ini_conf),
                   **{k: v for k, v in env_conf.items() if k in overrides})
 
     if None in (config.get(k) for k in REQUIRED_CONFIG_KEYS):
-        missings = (k for k in REQUIRED_CONFIG_KEYS if not config.get(k))
+        missings = REQUIRED_CONFIG_KEYS.difference(config)
         raise ValueError("the configuration is missing the following keys: "
                          ", ".join(missings))
     return config
