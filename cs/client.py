@@ -266,9 +266,10 @@ def read_config_from_ini(ini_group=None):
     if not conf.has_section(ini_group):
         return dict(name=None)
 
+    all_keys = REQUIRED_CONFIG_KEYS.union(ALLOWED_CONFIG_KEYS)
     ini_config = {k: v
                   for k, v in conf.items(ini_group)
-                  if k in REQUIRED_CONFIG_KEYS.union(ALLOWED_CONFIG_KEYS)}
+                  if v and k in all_keys}
     ini_config["name"] = ini_group
     return ini_config
 
@@ -299,8 +300,8 @@ def read_config(ini_group=None):
     config = dict(dict(env_conf, **ini_conf),
                   **{k: v for k, v in env_conf.items() if k in overrides})
 
-    if None in (config.get(k) for k in REQUIRED_CONFIG_KEYS):
-        missings = (k for k in REQUIRED_CONFIG_KEYS if not config.get(k))
+    missings = REQUIRED_CONFIG_KEYS.difference(config)
+    if missings:
         raise ValueError("the configuration is missing the following keys: "
                          ", ".join(missings))
     return config
