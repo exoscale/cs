@@ -300,7 +300,7 @@ def read_config(ini_group=None):
                   **{k: v for k, v in env_conf.items() if k in overrides})
 
     if None in (config.get(k) for k in REQUIRED_CONFIG_KEYS):
-        missings = REQUIRED_CONFIG_KEYS.difference(config)
+        missings = (k for k in REQUIRED_CONFIG_KEYS if not config.get(k))
         raise ValueError("the configuration is missing the following keys: "
                          ", ".join(missings))
     return config
