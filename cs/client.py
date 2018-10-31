@@ -277,7 +277,7 @@ class CloudStack(object):
         remaining = timedelta(seconds=total_time)
         endtime = datetime.now() + remaining
 
-        while remaining.total_seconds() > 1:
+        while remaining.total_seconds() > 0:
             timeout = max(min(self.timeout, remaining.total_seconds()), 1)
             try:
                 j = self.queryAsyncJobResult(jobid=jobid,
@@ -298,6 +298,7 @@ class CloudStack(object):
                 if failures > 10:
                     raise e
 
+            time.sleep(self.poll_interval)
             remaining = endtime - datetime.now()
 
         raise CloudStackException("Timeout waiting for async job result",
