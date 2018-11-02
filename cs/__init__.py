@@ -102,25 +102,22 @@ def main(args=None):
         response = getattr(cs, command)(fetch_result=fetch_result,
                                         **kwargs)
     except CloudStackException as e:
-        message, args = (e.args[0], e.args[1:])
-        if len(args) > 0 and hasattr(args[0], 'status_code'):
-            response = args[0]
-
+        ok = False
+        message, response, args = (e.args[0], e.args[1], e.args[1:])
+        if response:
             if not options.quiet:
                 sys.stderr.write("Cloudstack error: HTTP response "
                                  "{0}\n".format(response.status_code))
 
             try:
                 response = json.loads(response.text)
-                ok = False
             except ValueError:
                 sys.stderr.write(response.text)
                 sys.stderr.write("\n")
-                return 1
         else:
-            sys.stderr.write("Error: {0} {1}\n".format(message, args))
-            return 1
+            sys.stderr.write("Error: {0}\n{1}\n".format(message, args))
+    else:
+        sys.stdout.write(_format_json(response, theme=theme))
+        sys.stdout.write('\n')
 
-    sys.stdout.write(_format_json(response, theme=theme))
-    sys.stdout.write('\n')
     return not ok
