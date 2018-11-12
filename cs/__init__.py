@@ -47,7 +47,7 @@ def _format_json(data, theme):
 
 def main():
     parser = argparse.ArgumentParser(description='Cloustack client.')
-    parser.add_argument('--region', metavar='REGION',
+    parser.add_argument('--region', '-r', metavar='REGION',
                         help='Cloudstack region in ~/.cloudstack.ini',
                         default=os.environ.get('CLOUDSTACK_REGION',
                                                'cloudstack'))
@@ -61,6 +61,9 @@ def main():
                         help='do not wait for async result')
     parser.add_argument('--quiet', '-q', action='store_true', default=False,
                         help='do not display additional status messages')
+    parser.add_argument('--trace', '-t', action='store_true',
+                        default=os.environ.get('CLOUDSTACK_TRACE', False),
+                        help='trace the HTTP requests done on stderr')
     parser.add_argument('command', metavar="COMMAND",
                         help='Cloudstack API command to execute')
 
@@ -90,6 +93,8 @@ def main():
 
     if options.post:
         config['method'] = 'post'
+    if options.trace:
+        config['trace'] = True
     cs = CloudStack(**config)
     ok = True
     try:
