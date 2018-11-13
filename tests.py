@@ -193,7 +193,7 @@ class RequestTest(TestCase):
                                           headers={'Accept-Encoding': 'br'})
         self.assertEqual(machines, {})
 
-        mock.assert_called_once()
+        self.assertEqual(1, mock.call_count)
 
         [request], kwargs = mock.call_args
 
@@ -221,7 +221,7 @@ class RequestTest(TestCase):
                                           fetch_list=True)
         self.assertEqual(machines, [])
 
-        mock.assert_called_once()
+        self.assertEqual(1, mock.call_count)
 
         [request], kwargs = mock.call_args
 
@@ -246,7 +246,7 @@ class RequestTest(TestCase):
             'listvirtualmachinesresponse': {},
         }
         cs.listVirtualMachines(listall=1, unicode_param=u'éèààû')
-        mock.assert_called_once()
+        self.assertEqual(1, mock.call_count)
 
         [request], _ = mock.call_args
 
@@ -268,7 +268,7 @@ class RequestTest(TestCase):
         cs.listVirtualMachines(foo=["foo", "bar"],
                                bar=[{'baz': 'blah', 'foo': 1000}],
                                bytes_param=b'blah')
-        mock.assert_called_once()
+        self.assertEqual(1, mock.call_count)
 
         [request], kwargs = mock.call_args
 
@@ -296,7 +296,7 @@ class RequestTest(TestCase):
         }
         cs.scaleVirtualMachine(id='a',
                                details={'cpunumber': 1000, 'memory': '640k'})
-        mock.assert_called_once()
+        self.assertEqual(1, mock.call_count)
 
         [request], kwargs = mock.call_args
 
@@ -321,7 +321,7 @@ class RequestTest(TestCase):
             'createnetworkresponse': {},
         }
         cs.createNetwork(name="", display_text="")
-        mock.assert_called_once()
+        self.assertEqual(1, mock.call_count)
 
         [request], kwargs = mock.call_args
 
@@ -346,7 +346,7 @@ class RequestTest(TestCase):
             'listvirtualmachinesresponse': {},
         }
         cs.listVirtualMachines(blah='brah')
-        mock.assert_called_once()
+        self.assertEqual(1, mock.call_count)
 
         [request], kwargs = mock.call_args
 
@@ -381,7 +381,7 @@ class RequestTest(TestCase):
             'createnetworkresponse': {},
         }
         cs.createNetwork(name="", display_text="")
-        mock.assert_called_once()
+        self.assertEqual(1, mock.call_count)
 
         [request], _ = mock.call_args
 
