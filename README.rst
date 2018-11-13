@@ -163,6 +163,11 @@ Usage::
 
 Optionally ``CLOUDSTACK_REGION`` can be used to overwrite the default region ``cloudstack``.
 
+For the power users that don't want to put any secrets on disk,
+``CLOUDSTACK_OVERRIDES`` let you pick which key will be set from the
+environment even if present in the ini file.
+
+
 Pagination
 ----------
 

@@ -40,7 +40,8 @@ def cwd(path):
     initial = os.getcwd()
     os.chdir(path)
     try:
-        yield
+        with patch('os.path.expanduser', new=lambda x: path):
+            yield
     finally:
         os.chdir(initial)
 
@@ -69,9 +70,9 @@ class ConfigTest(TestCase):
                 'key': 'test key from env',
                 'secret': 'test secret from env',
                 'endpoint': 'https://api.example.com/from-env',
-                'expiration': '600',
+                'expiration': 600,
                 'method': 'get',
-                'timeout': '10',
+                'timeout': 10,
                 'verify': True,
                 'cert': None,
                 'name': None,
@@ -91,13 +92,44 @@ class ConfigTest(TestCase):
                 'key': 'test key from env',
                 'secret': 'test secret from env',
                 'endpoint': 'https://api.example.com/from-env',
-                'expiration': '600',
+                'expiration': 600,
                 'method': 'post',
                 'timeout': '99',
                 'verify': '/path/to/ca.pem',
                 'cert': '/path/to/cert.pem',
                 'name': None,
                 'retry': '5',
+            })
+
+    def test_env_var_combined_with_dir_config(self):
+        with open('/tmp/cloudstack.ini', 'w') as f:
+            f.write('[hanibal]\n'
+                    'endpoint = https://api.example.com/from-file\n'
+                    'key = test key from file\n'
+                    'secret = secret from file\n'
+                    'theme = monokai\n'
+                    'other = please ignore me\n'
+                    'timeout = 50')
+            self.addCleanup(partial(os.remove, '/tmp/cloudstack.ini'))
+        # Secret gets read from env var
+        with env(CLOUDSTACK_ENDPOINT='https://api.example.com/from-env',
+                 CLOUDSTACK_KEY='test key from env',
+                 CLOUDSTACK_SECRET='test secret from env',
+                 CLOUDSTACK_REGION='hanibal',
+                 CLOUDSTACK_OVERRIDES='endpoint,secret'), cwd('/tmp'):
+            conf = read_config()
+            self.assertEqual(conf, {
+                'endpoint': 'https://api.example.com/from-env',
+                'key': 'test key from file',
+                'secret': 'test secret from env',
+                'expiration': 600,
+                'theme': 'monokai',
+                'timeout': '50',
+                'name': 'hanibal',
+                'verify': True,
+                'retry': 0,
+                'method': 'get',
+                'cert': None,
             })
 
     def test_current_dir_config(self):
@@ -113,14 +145,32 @@ class ConfigTest(TestCase):
 
         with cwd('/tmp'):
             conf = read_config()
-            self.assertEqual(dict(conf), {
+            self.assertEqual(conf, {
                 'endpoint': 'https://api.example.com/from-file',
                 'key': 'test key from file',
                 'secret': 'test secret from file',
+                'expiration': 600,
                 'theme': 'monokai',
                 'timeout': '50',
                 'name': 'cloudstack',
+                'verify': True,
+                'retry': 0,
+                'method': 'get',
+                'cert': None,
             })
+
+    def test_incomplete_config(self):
+        with open('/tmp/cloudstack.ini', 'w') as f:
+            f.write('[hanibal]\n'
+                    'endpoint = https://api.example.com/from-file\n'
+                    'secret = secret from file\n'
+                    'theme = monokai\n'
+                    'other = please ignore me\n'
+                    'timeout = 50')
+            self.addCleanup(partial(os.remove, '/tmp/cloudstack.ini'))
+        # Secret gets read from env var
+        with cwd('/tmp'):
+            self.assertRaises(ValueError, read_config)
 
 
 class RequestTest(TestCase):

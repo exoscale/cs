@@ -4,6 +4,7 @@ import hashlib
 import hmac
 import os
 import sys
+import re
 from datetime import datetime, timedelta
 
 try:
@@ -41,6 +42,18 @@ if sys.version_info >= (3, 5):
 
 PAGE_SIZE = 500
 EXPIRES_FORMAT = "%Y-%m-%dT%H:%M:%S%z"
+
+REQUIRED_CONFIG_KEYS = {"endpoint", "key", "secret", "method", "timeout"}
+ALLOWED_CONFIG_KEYS = {"verify", "cert", "retry", "theme", "expiration"}
+DEFAULT_CONFIG = {
+    "timeout": 10,
+    "method": "get",
+    "retry": 0,
+    "verify": True,
+    "cert": None,
+    "name": None,
+    "expiration": 600,
+}
 
 
 def cs_encode(s):
@@ -231,27 +244,7 @@ class CloudStack(object):
         return base64.b64encode(digest).decode('utf-8').strip()
 
 
-def read_config(ini_group=None):
-    if not ini_group:
-        ini_group = os.environ.get('CLOUDSTACK_REGION', 'cloudstack')
-    # Try env vars first
-    os.environ.setdefault('CLOUDSTACK_METHOD', 'get')
-    os.environ.setdefault('CLOUDSTACK_TIMEOUT', '10')
-    os.environ.setdefault('CLOUDSTACK_EXPIRATION', '600')
-    keys = ['endpoint', 'key', 'secret', 'method', 'timeout', 'expiration']
-    env_conf = {}
-    for key in keys:
-        if 'CLOUDSTACK_{0}'.format(key.upper()) not in os.environ:
-            break
-        else:
-            env_conf[key] = os.environ['CLOUDSTACK_{0}'.format(key.upper())]
-    else:
-        env_conf['verify'] = os.environ.get('CLOUDSTACK_VERIFY', True)
-        env_conf['cert'] = os.environ.get('CLOUDSTACK_CERT', None)
-        env_conf['name'] = None
-        env_conf['retry'] = os.environ.get('CLOUDSTACK_RETRY', 0)
-        return env_conf
-
+def read_config_from_ini(ini_group=None):
     # Config file: $PWD/cloudstack.ini or $HOME/.cloudstack.ini
     # Last read wins in configparser
     paths = (
@@ -266,15 +259,49 @@ def read_config(ini_group=None):
             ", ".join(paths)))
     conf = ConfigParser()
     conf.read(paths)
-    try:
-        cs_conf = conf[ini_group]
-    except AttributeError:  # python 2
-        cs_conf = dict(conf.items(ini_group))
-    cs_conf['name'] = ini_group
 
-    allowed_keys = ('endpoint', 'key', 'secret', 'timeout', 'method', 'verify',
-                    'cert', 'name', 'retry', 'theme', 'expiration')
+    if not ini_group:
+        ini_group = os.getenv('CLOUDSTACK_REGION', 'cloudstack')
 
-    return dict(((k, v)
-                 for k, v in cs_conf.items()
-                 if k in allowed_keys))
+    if not conf.has_section(ini_group):
+        return dict(name=None)
+
+    all_keys = REQUIRED_CONFIG_KEYS.union(ALLOWED_CONFIG_KEYS)
+    ini_config = {k: v
+                  for k, v in conf.items(ini_group)
+                  if v and k in all_keys}
+    ini_config["name"] = ini_group
+    return ini_config
+
+
+def read_config(ini_group=None):
+    """
+    Read the configuration from the environment, or config.
+
+    First it try to go for the environment, then it overrides
+    those with the cloudstack.ini file.
+    """
+    env_conf = dict(DEFAULT_CONFIG)
+    for key in REQUIRED_CONFIG_KEYS.union(ALLOWED_CONFIG_KEYS):
+        env_key = "CLOUDSTACK_{0}".format(key.upper())
+        value = os.getenv(env_key)
+        if value:
+            env_conf[key] = value
+
+    # overrides means we have a .ini to read
+    overrides = os.getenv('CLOUDSTACK_OVERRIDES', '').strip()
+
+    if not overrides and set(env_conf).issuperset(REQUIRED_CONFIG_KEYS):
+        return env_conf
+
+    ini_conf = read_config_from_ini(ini_group)
+
+    overrides = {s.lower() for s in re.split(r'\W+', overrides)}
+    config = dict(dict(env_conf, **ini_conf),
+                  **{k: v for k, v in env_conf.items() if k in overrides})
+
+    missings = REQUIRED_CONFIG_KEYS.difference(config)
+    if missings:
+        raise ValueError("the configuration is missing the following keys: "
+                         ", ".join(missings))
+    return config
