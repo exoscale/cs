@@ -223,8 +223,7 @@ class RequestTest(TestCase):
 
         mock.assert_called_once()
 
-        args, kwargs = mock.call_args
-        [request] = args
+        [request], kwargs = mock.call_args
 
         self.assertEqual(dict(cert=None, timeout=20, verify=True), kwargs)
         self.assertEqual('GET', request.method)
@@ -249,8 +248,7 @@ class RequestTest(TestCase):
         cs.listVirtualMachines(listall=1, unicode_param=u'éèààû')
         mock.assert_called_once()
 
-        args, _ = mock.call_args
-        [request] = args
+        [request], _ = mock.call_args
 
         url = urlparse(request.url)
         qs = parse_qs(url.query, True)
@@ -272,8 +270,7 @@ class RequestTest(TestCase):
                                bytes_param=b'blah')
         mock.assert_called_once()
 
-        args, kwargs = mock.call_args
-        [request] = args
+        [request], kwargs = mock.call_args
 
         self.assertEqual(dict(cert=None, timeout=10, verify=True), kwargs)
         self.assertEqual('GET', request.method)
@@ -301,8 +298,7 @@ class RequestTest(TestCase):
                                details={'cpunumber': 1000, 'memory': '640k'})
         mock.assert_called_once()
 
-        args, kwargs = mock.call_args
-        [request] = args
+        [request], kwargs = mock.call_args
 
         self.assertEqual(dict(cert=None, timeout=10, verify=True), kwargs)
         self.assertEqual('GET', request.method)
@@ -327,8 +323,7 @@ class RequestTest(TestCase):
         cs.createNetwork(name="", display_text="")
         mock.assert_called_once()
 
-        args, kwargs = mock.call_args
-        [request] = args
+        [request], kwargs = mock.call_args
 
         self.assertEqual(dict(cert=None, timeout=10, verify=True), kwargs)
         self.assertEqual('GET', request.method)
@@ -353,8 +348,7 @@ class RequestTest(TestCase):
         cs.listVirtualMachines(blah='brah')
         mock.assert_called_once()
 
-        args, kwargs = mock.call_args
-        [request] = args
+        [request], kwargs = mock.call_args
 
         self.assertEqual(dict(cert=None, timeout=10, verify=True), kwargs)
         self.assertEqual('POST', request.method)
@@ -389,8 +383,7 @@ class RequestTest(TestCase):
         cs.createNetwork(name="", display_text="")
         mock.assert_called_once()
 
-        args, _ = mock.call_args
-        [request] = args
+        [request], _ = mock.call_args
 
         url = urlparse(request.url)
         qs = parse_qs(url.query, True)
