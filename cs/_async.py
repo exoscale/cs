@@ -1,5 +1,6 @@
 import asyncio
 import ssl
+import warnings
 
 import aiohttp
 
@@ -14,9 +15,14 @@ class AIOCloudStack(CloudStack):
         return handler
 
     async def _request(self, command, json=True, opcode_name='command',
-                       fetch_list=False, fetch_result=False, **kwargs):
+                       fetch_list=False, headers=None, **params):
+        if "fetch_result" not in params:
+            warnings.warn("fetch_result will have to be explicitely set"
+                          " to True",
+                          DeprecationWarning)
+        fetch_result = params.pop("fetch_result", True)
         kwarg, kwargs = self._prepare_request(command, json, opcode_name,
-                                              fetch_list, **kwargs)
+                                              fetch_list, **params)
 
         ssl_context = None
         if self.cert:
@@ -39,7 +45,9 @@ class AIOCloudStack(CloudStack):
                 transform(kwargs)
                 kwargs.pop('signature', None)
                 kwargs['signature'] = self._sign(kwargs)
-                response = await handler(self.endpoint, **{kwarg: kwargs})
+                response = await handler(self.endpoint,
+                                         headers=headers,
+                                         **{kwarg: kwargs})
 
                 ctype = response.headers['content-type'].split(';')[0]
                 try:

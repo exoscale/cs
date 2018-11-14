@@ -179,8 +179,8 @@ class CloudStack(object):
         return kind, dict(params.items())
 
     def _request(self, command, json=True, opcode_name='command',
-                 fetch_list=False, fetch_result=False, headers=None,
-                 **params):
+                 fetch_list=False, headers=None, **params):
+        fetch_result = params.pop('fetch_result', False)
         kind, params = self._prepare_request(command, json, opcode_name,
                                              fetch_list, **params)
 
