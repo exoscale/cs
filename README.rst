@@ -139,9 +139,9 @@ seconds). The default value is 10.
 failure. The default value is 0, meaning no retry.
 
 ``CLOUDSTACK_JOB_TIMEOUT`` or the `job_timeout`` entry in the configuration file
-(float) can be used to set how long an async call is retried assuming ``fetch_result`` is set to true). The default value is ``None``, it waits for ever.
+(float) can be used to set how long an async call is retried assuming ``fetch_result`` is set to true). The default value is ``None``, it waits forever.
 
-``CLOUDSTACK_POLL_INTERVAL`` or the ``poll_interval`` entry in the configuration file (float) can be used to set how frequently polling an async job result is done. The default value is 2.
+``CLOUDSTACK_POLL_INTERVAL`` or the ``poll_interval`` entry in the configuration file (number of seconds, float) can be used to set how frequently polling an async job result is done. The default value is 2.
 
 ``CLOUDSTACK_EXPIRATION`` or the ``expiration`` entry in the configuration file
 (integer) can be used to set how long a signature is valid. By default, it picks
