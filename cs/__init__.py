@@ -103,20 +103,21 @@ def main(args=None):
                                         **kwargs)
     except CloudStackException as e:
         ok = False
-        message, response, args = (e.args[0], e.args[1], e.args[1:])
-        if response:
+        if e.response is not None:
             if not options.quiet:
                 sys.stderr.write("Cloudstack error: HTTP response "
-                                 "{0}\n".format(response.status_code))
+                                 "{0}\n".format(e.response.status_code))
 
             try:
-                response = json.loads(response.text)
+                response = json.loads(e.response.text)
             except ValueError:
-                sys.stderr.write(response.text)
+                sys.stderr.write(e.response.text)
                 sys.stderr.write("\n")
         else:
-            sys.stderr.write("Error: {0}\n{1}\n".format(message, args))
-    else:
+            message, data = (e.args[0], e.args[0:])
+            sys.stderr.write("Error: {0}\n{1}\n".format(message, data))
+
+    if response:
         sys.stdout.write(_format_json(response, theme=theme))
         sys.stdout.write('\n')
 

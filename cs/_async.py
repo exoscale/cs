@@ -17,8 +17,9 @@ class AIOCloudStack(CloudStack):
     async def _request(self, command, json=True, opcode_name='command',
                        fetch_list=False, headers=None, **params):
         if "fetch_result" not in params:
-            warnings.warn("fetch_result will have to be explicitely set"
-                          " to True",
+            warnings.warn("implicit job polling is deprecated. To pull the "
+                          "job result in future releases, please pass "
+                          "fetch_result=True",
                           DeprecationWarning)
         fetch_result = params.pop("fetch_result", True)
         kwarg, kwargs = self._prepare_request(command, json, opcode_name,

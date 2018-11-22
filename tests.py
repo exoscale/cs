@@ -19,6 +19,7 @@ except ImportError:
 
 from cs import CloudStack, CloudStackException, read_config
 from cs.client import EXPIRES_FORMAT
+from requests.structures import CaseInsensitiveDict
 
 
 @contextmanager
@@ -375,6 +376,17 @@ class RequestTest(TestCase):
                                             'uuidList': [],
                                             'cserrorcode': 9999,
                                             'errortext': 'Fail'}}
+        cs = CloudStack(endpoint='https://localhost', key='foo', secret='bar')
+        self.assertRaises(CloudStackException, cs.listVirtualMachines)
+
+    @patch("requests.Session.send")
+    def test_bad_content_type(self, get):
+        get.return_value.status_code = 502
+        get.return_value.headers = CaseInsensitiveDict(**{
+            "content-type": "text/html;charset=utf-8"})
+        get.return_value.text = ("<!DOCTYPE html><title>502</title>"
+                                 "<h1>Gateway timeout</h1>")
+
         cs = CloudStack(endpoint='https://localhost', key='foo', secret='bar')
         self.assertRaises(CloudStackException, cs.listVirtualMachines)
 

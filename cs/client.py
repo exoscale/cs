@@ -122,11 +122,10 @@ def transform(params):
 
 
 class CloudStackException(Exception):
-    pass
-
-
-class Unauthorized(CloudStackException):
-    pass
+    """Exception nicely wrapping a request response."""
+    def __init__(self, message, response, *args, **kwargs):
+        super(CloudStackException, self).__init__(message, *args, **kwargs)
+        self.response = response
 
 
 class CloudStack(object):
@@ -261,14 +260,22 @@ class CloudStack(object):
         It throws an exception if the server didn't answer with a 200.
         """
         if json:
-            # XXX check for the content-type: application/json
+            contentType = response.headers.get("Content-Type", "")
+            if not contentType.startswith("application/json"):
+                raise CloudStackException(
+                    "JSON (application/json) was expected, got {!r}"
+                    .format(contentType),
+                    response)
+
             try:
                 data = response.json()
             except ValueError as e:
                 msg = "Make sure endpoint URL '%s' is correct." % self.endpoint
                 raise CloudStackException(
-                    "HTTP {0} response from CloudStack".format(
-                        response.status_code), response, "%s. " % str(e) + msg)
+                    "HTTP {0} response from CloudStack"
+                    .format(response.status_code),
+                    response,
+                    "%s. " % str(e) + msg,)
 
             [key] = data.keys()
             data = data[key]
@@ -278,7 +285,9 @@ class CloudStack(object):
         if response.status_code != 200:
             raise CloudStackException(
                 "HTTP {0} response from CloudStack".format(
-                    response.status_code), response, data)
+                    response.status_code),
+                response,
+                data)
 
         return data
 
@@ -323,8 +332,8 @@ class CloudStack(object):
 
                     return j['jobresult']
 
-            except CloudStackException as e:
-                raise e
+            except CloudStackException:
+                raise
 
             except Exception as e:
                 failures += 1
@@ -338,7 +347,8 @@ class CloudStack(object):
             response.status_code = 408
 
         raise CloudStackException("Timeout waiting for async job result",
-                                  response, jobid)
+                                  response,
+                                  jobid)
 
     def _sign(self, data):
         """
