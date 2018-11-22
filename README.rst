@@ -181,6 +181,16 @@ Or in Python::
 
     cs.listVirtualMachines(fetch_list=True)
 
+Tracing HTTP requests
+---------------------
+
+Once in a while, it could be useful to understand, see what HTTP calls are made
+under the hood. The ``trace`` flag (or ``CLOUDSTACK_TRACE``) does just that::
+
+   $ cs --trace listVirtualMachines
+
+   $ cs -t listZones
+
 Async client
 ------------
 

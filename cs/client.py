@@ -1,4 +1,6 @@
 #! /usr/bin/env python
+from __future__ import print_function
+
 import base64
 import hashlib
 import hmac
@@ -44,7 +46,8 @@ PAGE_SIZE = 500
 EXPIRES_FORMAT = "%Y-%m-%dT%H:%M:%S%z"
 
 REQUIRED_CONFIG_KEYS = {"endpoint", "key", "secret", "method", "timeout"}
-ALLOWED_CONFIG_KEYS = {"verify", "cert", "retry", "theme", "expiration"}
+ALLOWED_CONFIG_KEYS = {"verify", "cert", "retry", "theme", "expiration",
+                       "trace"}
 DEFAULT_CONFIG = {
     "timeout": 10,
     "method": "get",
@@ -53,6 +56,7 @@ DEFAULT_CONFIG = {
     "cert": None,
     "name": None,
     "expiration": 600,
+    "trace": None,
 }
 
 
@@ -119,7 +123,7 @@ class Unauthorized(CloudStackException):
 class CloudStack(object):
     def __init__(self, endpoint, key, secret, timeout=10, method='get',
                  verify=True, cert=None, name=None, retry=0,
-                 expiration=timedelta(minutes=10)):
+                 expiration=timedelta(minutes=10), trace=False):
         self.endpoint = endpoint
         self.key = key
         self.secret = secret
@@ -132,6 +136,7 @@ class CloudStack(object):
         if not hasattr(expiration, "seconds"):
             expiration = timedelta(seconds=int(expiration))
         self.expiration = expiration
+        self.trace = bool(trace)
 
     def __repr__(self):
         return '<CloudStack: {0}>'.format(self.name or self.endpoint)
@@ -178,13 +183,27 @@ class CloudStack(object):
             params.pop('signature', None)
             params['signature'] = self._sign(params)
 
+            req = requests.Request(self.method,
+                                   self.endpoint,
+                                   headers=headers,
+                                   **{kind: params})
+            prepped = req.prepare()
+            if self.trace:
+                print(prepped.method, prepped.url, file=sys.stderr)
+                if prepped.headers:
+                    print(prepped.headers, "\n", file=sys.stderr)
+                if prepped.body:
+                    print(prepped.body, file=sys.stderr)
+                else:
+                    print(file=sys.stderr)
+
             try:
-                response = getattr(requests, self.method)(self.endpoint,
-                                                          headers=headers,
-                                                          timeout=self.timeout,
-                                                          verify=self.verify,
-                                                          cert=self.cert,
-                                                          **{kind: params})
+                with requests.Session() as session:
+                    response = session.send(prepped,
+                                            timeout=self.timeout,
+                                            verify=self.verify,
+                                            cert=self.cert)
+
             except requests.exceptions.ConnectionError:
                 max_retry -= 1
                 if (
@@ -194,6 +213,13 @@ class CloudStack(object):
                     raise
                 continue
             max_retry = self.retry
+
+            if self.trace:
+                print(response.status_code, response.reason, file=sys.stderr)
+                headers = "\n".join("{}: {}".format(k, v)
+                                    for k, v in response.headers.items())
+                print(headers, "\n", file=sys.stderr)
+                print(response.text, "\n", file=sys.stderr)
 
             try:
                 data = response.json()
