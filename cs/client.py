@@ -147,7 +147,7 @@ class CloudStack(object):
             return self._request(command, **kwargs)
         return handler
     
-    def _set_proxies(proxies):
+    def _set_proxies(self, proxies):
         self.proxies = proxies
     
     def _prepare_request(self, command, json, opcode_name, fetch_list,
