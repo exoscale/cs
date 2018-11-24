@@ -137,6 +137,7 @@ class CloudStack(object):
             expiration = timedelta(seconds=int(expiration))
         self.expiration = expiration
         self.trace = bool(trace)
+        self.proxies = None
 
     def __repr__(self):
         return '<CloudStack: {0}>'.format(self.name or self.endpoint)
@@ -145,7 +146,10 @@ class CloudStack(object):
         def handler(**kwargs):
             return self._request(command, **kwargs)
         return handler
-
+    
+    def _set_proxies(proxies):
+        self.proxies = proxies
+    
     def _prepare_request(self, command, json, opcode_name, fetch_list,
                          **kwargs):
         params = CaseInsensitiveDict(**kwargs)
@@ -183,10 +187,18 @@ class CloudStack(object):
             params.pop('signature', None)
             params['signature'] = self._sign(params)
 
-            req = requests.Request(self.method,
+            if self.proxies is None:
+                req = requests.Request(self.method,
+                                       self.endpoint,
+                                       headers=headers,
+                                       **{kind: params})
+            else:
+                req = requests.Request(self.method,
                                    self.endpoint,
                                    headers=headers,
-                                   **{kind: params})
+                                   **{kind: params},
+                                   proxies=self.proxies)
+
             prepped = req.prepare()
             if self.trace:
                 print(prepped.method, prepped.url, file=sys.stderr)
