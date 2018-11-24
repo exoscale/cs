@@ -149,7 +149,7 @@ class CloudStack(object):
     
     def _set_proxies(self, proxies):
         self.proxies = proxies
-    
+ 
     def _prepare_request(self, command, json, opcode_name, fetch_list,
                          **kwargs):
         params = CaseInsensitiveDict(**kwargs)
@@ -194,10 +194,10 @@ class CloudStack(object):
                                        **{kind: params})
             else:
                 req = requests.Request(self.method,
-                                   self.endpoint,
-                                   headers=headers,
-                                   **{kind: params},
-                                   proxies=self.proxies)
+                                       self.endpoint,
+                                       headers=headers,
+                                       proxies=self.proxies,
+                                       **{kind: params})
 
             prepped = req.prepare()
             if self.trace:
