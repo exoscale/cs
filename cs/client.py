@@ -146,10 +146,10 @@ class CloudStack(object):
         def handler(**kwargs):
             return self._request(command, **kwargs)
         return handler
-    
+
     def _set_proxies(self, proxies):
         self.proxies = proxies
- 
+
     def _prepare_request(self, command, json, opcode_name, fetch_list,
                          **kwargs):
         params = CaseInsensitiveDict(**kwargs)
