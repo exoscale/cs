@@ -19,6 +19,7 @@ except ImportError:
 
 from cs import CloudStack, CloudStackException, read_config
 from cs.client import EXPIRES_FORMAT
+from requests.structures import CaseInsensitiveDict
 
 
 @contextmanager
@@ -75,8 +76,9 @@ class ConfigTest(TestCase):
                 'endpoint': 'https://api.example.com/from-env',
                 'expiration': 600,
                 'method': 'get',
-                'timeout': 10,
                 'trace': None,
+                'timeout': 10,
+                'poll_interval': 2.0,
                 'verify': True,
                 'cert': None,
                 'name': None,
@@ -100,6 +102,7 @@ class ConfigTest(TestCase):
                 'method': 'post',
                 'timeout': '99',
                 'trace': None,
+                'poll_interval': 2.0,
                 'verify': '/path/to/ca.pem',
                 'cert': '/path/to/cert.pem',
                 'name': None,
@@ -131,7 +134,9 @@ class ConfigTest(TestCase):
                 'theme': 'monokai',
                 'timeout': '50',
                 'trace': None,
+                'poll_interval': 2.0,
                 'name': 'hanibal',
+                'poll_interval': 2.0,
                 'verify': True,
                 'retry': 0,
                 'method': 'get',
@@ -159,7 +164,9 @@ class ConfigTest(TestCase):
                 'theme': 'monokai',
                 'timeout': '50',
                 'trace': None,
+                'poll_interval': 2.0,
                 'name': 'cloudstack',
+                'poll_interval': 2.0,
                 'verify': True,
                 'retry': 0,
                 'method': 'get',
@@ -369,6 +376,17 @@ class RequestTest(TestCase):
                                             'uuidList': [],
                                             'cserrorcode': 9999,
                                             'errortext': 'Fail'}}
+        cs = CloudStack(endpoint='https://localhost', key='foo', secret='bar')
+        self.assertRaises(CloudStackException, cs.listVirtualMachines)
+
+    @patch("requests.Session.send")
+    def test_bad_content_type(self, get):
+        get.return_value.status_code = 502
+        get.return_value.headers = CaseInsensitiveDict(**{
+            "content-type": "text/html;charset=utf-8"})
+        get.return_value.text = ("<!DOCTYPE html><title>502</title>"
+                                 "<h1>Gateway timeout</h1>")
+
         cs = CloudStack(endpoint='https://localhost', key='foo', secret='bar')
         self.assertRaises(CloudStackException, cs.listVirtualMachines)
 

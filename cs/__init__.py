@@ -2,7 +2,6 @@ import argparse
 import json
 import os
 import sys
-import time
 from collections import defaultdict
 
 try:
@@ -45,7 +44,7 @@ def _format_json(data, theme):
     return output
 
 
-def main():
+def main(args=None):
     parser = argparse.ArgumentParser(description='Cloustack client.')
     parser.add_argument('--region', '-r', metavar='REGION',
                         help='Cloudstack region in ~/.cloudstack.ini',
@@ -77,7 +76,7 @@ def main():
                         nargs='*', type=parse_option,
                         help='Cloudstack API argument')
 
-    options = parser.parse_args()
+    options = parser.parse_args(args=args)
     command = options.command
     kwargs = defaultdict(set)
     for arg in options.arguments:
@@ -91,6 +90,8 @@ def main():
 
     theme = config.pop('theme', 'default')
 
+    fetch_result = 'Async' not in command and not getattr(options, 'async')
+
     if options.post:
         config['method'] = 'post'
     if options.trace:
@@ -98,38 +99,26 @@ def main():
     cs = CloudStack(**config)
     ok = True
     try:
-        response = getattr(cs, command)(**kwargs)
+        response = getattr(cs, command)(fetch_result=fetch_result,
+                                        **kwargs)
     except CloudStackException as e:
-        response = e.args[1]
-        if not options.quiet:
-            sys.stderr.write("Cloudstack error: HTTP response "
-                             "{0}\n".format(response.status_code))
+        ok = False
+        if e.response is not None:
+            if not options.quiet:
+                sys.stderr.write("Cloudstack error: HTTP response "
+                                 "{0}\n".format(e.response.status_code))
 
-        try:
-            response = json.loads(response.text)
-        except ValueError:
-            sys.stderr.write(response.text)
-            sys.stderr.write("\n")
-            sys.exit(1)
-
-    if 'Async' not in command and 'jobid' in response and not getattr(
-            options, 'async'):
-        if not options.quiet:
-            sys.stderr.write("Polling result... ^C to abort\n")
-        while True:
             try:
-                res = cs.queryAsyncJobResult(**response)
-                if res['jobstatus'] != 0:
-                    response = res
-                    if res['jobresultcode'] != 0:
-                        ok = False
-                    break
-                time.sleep(3)
-            except KeyboardInterrupt:
-                if not options.quiet:
-                    sys.stderr.write("Result not ready yet.\n")
-                break
+                response = json.loads(e.response.text)
+            except ValueError:
+                sys.stderr.write(e.response.text)
+                sys.stderr.write("\n")
+        else:
+            message, data = (e.args[0], e.args[0:])
+            sys.stderr.write("Error: {0}\n{1}\n".format(message, data))
 
-    sys.stdout.write(_format_json(response, theme=theme))
-    sys.stdout.write('\n')
-    sys.exit(int(not ok))
+    if response:
+        sys.stdout.write(_format_json(response, theme=theme))
+        sys.stdout.write('\n')
+
+    return not ok
