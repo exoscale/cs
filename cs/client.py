@@ -9,6 +9,7 @@ import sys
 import re
 import time
 from datetime import datetime, timedelta
+from distutils.util import strtobool
 
 try:
     from configparser import ConfigParser
@@ -431,4 +432,14 @@ def read_config(ini_group=None):
     if missings:
         raise ValueError("the configuration is missing the following keys: "
                          ", ".join(missings))
+
+    # convert booleans values.
+    if isinstance(config['verify'], string_type):
+        try:
+            verify = strtobool(config['verify'])
+        except ValueError:
+            pass
+        else:
+            config['verify'] = verify
+
     return config
