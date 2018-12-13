@@ -230,7 +230,7 @@ class CloudStack(object):
             if self.trace:
                 print(response.status_code, response.reason, file=sys.stderr)
                 headersTrace = "\n".join("{}: {}".format(k, v)
-                                    for k, v in response.headers.items())
+                                         for k, v in response.headers.items())
                 print(headersTrace, "\n", file=sys.stderr)
                 print(response.text, "\n", file=sys.stderr)
 
