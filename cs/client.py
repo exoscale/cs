@@ -390,8 +390,8 @@ def read_config_from_ini(ini_group=None):
     if not ini_group:
         ini_group = os.getenv('CLOUDSTACK_REGION', 'cloudstack')
 
-    if not conf.has_section(ini_group):
-        return dict(name=None)
+        if not conf.has_section(ini_group):
+            return dict(name=None)
 
     all_keys = REQUIRED_CONFIG_KEYS.union(ALLOWED_CONFIG_KEYS)
     ini_config = {k: v
@@ -429,6 +429,6 @@ def read_config(ini_group=None):
 
     missings = REQUIRED_CONFIG_KEYS.difference(config)
     if missings:
-        raise ValueError("the configuration is missing the following keys: "
+        raise ValueError("the configuration is missing the following keys: " +
                          ", ".join(missings))
     return config
