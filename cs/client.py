@@ -390,8 +390,8 @@ def read_config_from_ini(ini_group=None):
     if not ini_group:
         ini_group = os.getenv('CLOUDSTACK_REGION', 'cloudstack')
 
-    if not conf.has_section(ini_group):
-        return dict(name=None)
+        if not conf.has_section(ini_group):
+            return dict(name=None)
 
     all_keys = REQUIRED_CONFIG_KEYS.union(ALLOWED_CONFIG_KEYS)
     ini_config = {k: v
