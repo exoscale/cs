@@ -429,6 +429,6 @@ def read_config(ini_group=None):
 
     missings = REQUIRED_CONFIG_KEYS.difference(config)
     if missings:
-        raise ValueError("the configuration is missing the following keys: "
+        raise ValueError("the configuration is missing the following keys: " +
                          ", ".join(missings))
     return config
