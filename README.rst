@@ -147,6 +147,10 @@ failure. The default value is 0, meaning no retry.
 (integer) can be used to set how long a signature is valid. By default, it picks
 10 minutes but may be deactivated using any negative value, e.g. -1.
 
+``CLOUDSTACK_DANGEROUS_NO_TLS_VERIFY`` or the ``dangerous_no_tls_verify`` entry
+in the configuration file (boolean) can be used to deactivate the TLS verification
+made when using the HTTPS protocol.
+
 Multiple credentials can be set in ``.cloudstack.ini``. This allows selecting
 the credentials or endpoint to use with a command-line flag.
 

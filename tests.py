@@ -79,7 +79,8 @@ class ConfigTest(TestCase):
                 'trace': None,
                 'timeout': 10,
                 'poll_interval': 2.0,
-                'verify': True,
+                'verify': None,
+                'dangerous_no_tls_verify': False,
                 'cert': None,
                 'name': None,
                 'retry': 0,
@@ -105,6 +106,7 @@ class ConfigTest(TestCase):
                 'poll_interval': 2.0,
                 'verify': '/path/to/ca.pem',
                 'cert': '/path/to/cert.pem',
+                'dangerous_no_tls_verify': False,
                 'name': None,
                 'retry': '5',
             }, conf)
@@ -124,7 +126,7 @@ class ConfigTest(TestCase):
                  CLOUDSTACK_KEY='test key from env',
                  CLOUDSTACK_SECRET='test secret from env',
                  CLOUDSTACK_REGION='hanibal',
-                 CLOUDSTACK_VERIFY='0',
+                 CLOUDSTACK_DANGEROUS_NO_TLS_VERIFY='1',
                  CLOUDSTACK_OVERRIDES='endpoint,secret'), cwd('/tmp'):
             conf = read_config()
             self.assertEqual({
@@ -138,7 +140,8 @@ class ConfigTest(TestCase):
                 'poll_interval': 2.0,
                 'name': 'hanibal',
                 'poll_interval': 2.0,
-                'verify': False,
+                'verify': None,
+                'dangerous_no_tls_verify': True,
                 'retry': 0,
                 'method': 'get',
                 'cert': None,
@@ -150,7 +153,7 @@ class ConfigTest(TestCase):
                     'endpoint = https://api.example.com/from-file\n'
                     'key = test key from file\n'
                     'secret = test secret from file\n'
-                    'verify = false\n'
+                    'dangerous_no_tls_verify = true\n'
                     'theme = monokai\n'
                     'other = please ignore me\n'
                     'timeout = 50')
@@ -169,7 +172,8 @@ class ConfigTest(TestCase):
                 'poll_interval': 2.0,
                 'name': 'cloudstack',
                 'poll_interval': 2.0,
-                'verify': False,
+                'verify': None,
+                'dangerous_no_tls_verify': True,
                 'retry': 0,
                 'method': 'get',
                 'cert': None,
