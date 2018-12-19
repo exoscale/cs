@@ -9,6 +9,7 @@ import sys
 import re
 import time
 from datetime import datetime, timedelta
+from distutils.util import strtobool
 
 try:
     from configparser import ConfigParser
@@ -52,17 +53,18 @@ EXPIRES_FORMAT = "%Y-%m-%dT%H:%M:%S%z"
 
 REQUIRED_CONFIG_KEYS = {"endpoint", "key", "secret", "method", "timeout"}
 ALLOWED_CONFIG_KEYS = {"verify", "cert", "retry", "theme", "expiration",
-                       "poll_interval", "trace"}
+                       "poll_interval", "trace", "dangerous_no_tls_verify"}
 DEFAULT_CONFIG = {
     "timeout": 10,
     "method": "get",
     "retry": 0,
-    "verify": True,
+    "verify": None,
     "cert": None,
     "name": None,
     "expiration": 600,
     "poll_interval": POLL_INTERVAL,
     "trace": None,
+    "dangerous_no_tls_verify": False,
 }
 
 PENDING = 0
@@ -131,15 +133,20 @@ class CloudStackException(Exception):
 
 class CloudStack(object):
     def __init__(self, endpoint, key, secret, timeout=10, method='get',
-                 verify=True, cert=None, name=None, retry=0,
+                 verify=None, cert=None, name=None, retry=0,
                  job_timeout=None, poll_interval=POLL_INTERVAL,
-                 expiration=timedelta(minutes=10), trace=False):
+                 expiration=timedelta(minutes=10), trace=False,
+                 dangerous_no_tls_verify=False):
         self.endpoint = endpoint
         self.key = key
         self.secret = secret
         self.timeout = int(timeout)
         self.method = method.lower()
-        self.verify = verify
+        if verify:
+            self.verify = verify
+        else:
+            self.verify = not dangerous_no_tls_verify
+
         self.cert = cert
         self.name = name
         self.retry = int(retry)
@@ -431,4 +438,14 @@ def read_config(ini_group=None):
     if missings:
         raise ValueError("the configuration is missing the following keys: " +
                          ", ".join(missings))
+
+    # convert booleans values.
+    bool_keys = ('dangerous_no_tls_verify',)
+    for bool_key in bool_keys:
+        if isinstance(config[bool_key], string_type):
+            try:
+                config[bool_key] = strtobool(config[bool_key])
+            except ValueError:
+                pass
+
     return config
