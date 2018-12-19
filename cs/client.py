@@ -142,7 +142,7 @@ class CloudStack(object):
         self.secret = secret
         self.timeout = int(timeout)
         self.method = method.lower()
-        if verify is not None:
+        if verify:
             self.verify = verify
         else:
             self.verify = not dangerous_no_tls_verify
