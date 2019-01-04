@@ -1,8 +1,7 @@
 # coding: utf-8
+import datetime
 import os
 import sys
-import datetime
-
 from contextlib import contextmanager
 from functools import partial
 from unittest import TestCase
@@ -19,6 +18,7 @@ except ImportError:
 
 from cs import CloudStack, CloudStackException, read_config
 from cs.client import EXPIRES_FORMAT
+
 from requests.structures import CaseInsensitiveDict
 
 
