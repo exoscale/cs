@@ -5,8 +5,8 @@ import base64
 import hashlib
 import hmac
 import os
-import sys
 import re
+import sys
 import time
 from datetime import datetime, timedelta
 from distutils.util import strtobool
@@ -22,6 +22,7 @@ except ImportError:  # python 2
     from urllib import quote
 
 import pytz
+
 import requests
 from requests.structures import CaseInsensitiveDict
 
