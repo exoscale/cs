@@ -126,9 +126,10 @@ def transform(params):
 
 class CloudStackException(Exception):
     """Exception nicely wrapping a request response."""
-    def __init__(self, message, response, *args, **kwargs):
-        super(CloudStackException, self).__init__(message, *args, **kwargs)
-        self.response = response
+    def __init__(self, *args, **kwargs):
+        self.response = kwargs.pop('response')
+        assert self.response, "a response keyword argument is required"
+        super(CloudStackException, self).__init__(*args, **kwargs)
 
 
 class CloudStack(object):
@@ -273,7 +274,7 @@ class CloudStack(object):
                 raise CloudStackException(
                     "JSON (application/json) was expected, got {!r}"
                     .format(contentType),
-                    response)
+                    response=response)
 
             try:
                 data = response.json()
@@ -282,8 +283,8 @@ class CloudStack(object):
                 raise CloudStackException(
                     "HTTP {0} response from CloudStack"
                     .format(response.status_code),
-                    response,
-                    "%s. " % str(e) + msg,)
+                    "%s. " % str(e) + msg,
+                    response=response)
 
             [key] = data.keys()
             data = data[key]
@@ -294,8 +295,8 @@ class CloudStack(object):
             raise CloudStackException(
                 "HTTP {0} response from CloudStack".format(
                     response.status_code),
-                response,
-                data)
+                data,
+                response=response)
 
         return data
 
@@ -332,11 +333,12 @@ class CloudStack(object):
                 failures = 0
                 if j['jobstatus'] != PENDING:
                     if j['jobresultcode'] or j['jobstatus'] != SUCCESS:
-                        raise CloudStackException("Job failure", response)
+                        raise CloudStackException("Job failure",
+                                                  response=response)
 
                     if 'jobresult' not in j:
                         raise CloudStackException("Unknown job result",
-                                                  response)
+                                                  response=response)
 
                     return j['jobresult']
 
@@ -355,8 +357,8 @@ class CloudStack(object):
             response.status_code = 408
 
         raise CloudStackException("Timeout waiting for async job result",
-                                  response,
-                                  jobid)
+                                  jobid,
+                                  response=response)
 
     def _sign(self, data):
         """
@@ -381,13 +383,13 @@ class CloudStack(object):
 def read_config_from_ini(ini_group=None):
     # Config file: $PWD/cloudstack.ini or $HOME/.cloudstack.ini
     # Last read wins in configparser
-    paths = (
+    paths = [
         os.path.join(os.path.expanduser('~'), '.cloudstack.ini'),
         os.path.join(os.getcwd(), 'cloudstack.ini'),
-    )
+    ]
     # Look at CLOUDSTACK_CONFIG first if present
     if 'CLOUDSTACK_CONFIG' in os.environ:
-        paths += (os.path.expanduser(os.environ['CLOUDSTACK_CONFIG']),)
+        paths.append(os.path.expanduser(os.environ['CLOUDSTACK_CONFIG']))
     if not any([os.path.exists(c) for c in paths]):
         raise SystemExit("Config file not found. Tried {0}".format(
             ", ".join(paths)))
