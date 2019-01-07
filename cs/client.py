@@ -270,7 +270,8 @@ class CloudStack(object):
         """
         if json:
             contentType = response.headers.get("Content-Type", "")
-            if not contentType.startswith("application/json"):
+            if not contentType.startswith(("application/json",
+                                           "text/javascript")):
                 raise CloudStackException(
                     "JSON (application/json) was expected, got {!r}"
                     .format(contentType),
