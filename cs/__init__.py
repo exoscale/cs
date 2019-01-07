@@ -3,11 +3,7 @@ import json
 import os
 import sys
 from collections import defaultdict
-
-try:
-    from configparser import NoSectionError
-except ImportError:  # python 2
-    from ConfigParser import NoSectionError
+from configparser import NoSectionError
 
 try:
     import pygments

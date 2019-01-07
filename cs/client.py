@@ -1,6 +1,4 @@
-#! /usr/bin/env python
-from __future__ import print_function
-
+#! /usr/bin/env python3
 import base64
 import hashlib
 import hmac
@@ -8,36 +6,15 @@ import os
 import re
 import sys
 import time
+from configparser import ConfigParser
 from datetime import datetime, timedelta
 from distutils.util import strtobool
-
-try:
-    from configparser import ConfigParser
-except ImportError:  # python 2
-    from ConfigParser import ConfigParser
-
-try:
-    from urllib.parse import quote
-except ImportError:  # python 2
-    from urllib import quote
+from urllib.parse import quote
 
 import pytz
 
 import requests
 from requests.structures import CaseInsensitiveDict
-
-PY2 = sys.version_info < (3, 0)
-
-if PY2:
-    text_type = unicode  # noqa
-    string_type = basestring  # noqa
-    integer_types = int, long  # noqa
-    binary_type = str
-else:
-    text_type = str
-    string_type = str
-    integer_types = int
-    binary_type = bytes
 
 if sys.version_info >= (3, 5):
     try:
@@ -78,8 +55,6 @@ def cs_encode(s):
 
     java.net.URLEncoder.encode(s).replace('+', '%20')
     """
-    if PY2 and isinstance(s, text_type):
-        s = s.encode("utf-8")
     return quote(s, safe="*")
 
 
@@ -100,11 +75,11 @@ def transform(params):
             params.pop(key)
             continue
 
-        if isinstance(value, (string_type, binary_type)):
+        if isinstance(value, (str, bytes)):
             continue
 
-        if isinstance(value, integer_types):
-            params[key] = text_type(value)
+        if isinstance(value, int):
+            params[key] = str(value)
         elif isinstance(value, (list, tuple, set, dict)):
             if not value:
                 params.pop(key)
@@ -120,7 +95,7 @@ def transform(params):
                     for index, val in enumerate(value):
                         for name, v in val.items():
                             k = "%s[%d].%s" % (key, index, name)
-                            params[k] = text_type(v)
+                            params[k] = str(v)
         else:
             raise ValueError(type(value))
 
@@ -444,7 +419,7 @@ def read_config(ini_group=None):
     # convert booleans values.
     bool_keys = ('dangerous_no_tls_verify',)
     for bool_key in bool_keys:
-        if isinstance(config[bool_key], string_type):
+        if isinstance(config[bool_key], str):
             try:
                 config[bool_key] = strtobool(config[bool_key])
             except ValueError:

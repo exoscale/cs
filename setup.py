@@ -3,8 +3,6 @@
 A simple yet powerful CloudStack API client for Python and the command-line.
 """
 
-from __future__ import unicode_literals
-
 import sys
 from codecs import open
 from setuptools import find_packages, setup
@@ -22,15 +20,13 @@ tests_require = [
     'pytest-cov',
 ]
 
-if sys.version_info < (3, 0):
-    tests_require.append("mock")
-elif sys.version_info >= (3, 5):
+if sys.version_info >= (3, 5):
     extras_require["async"] = ["aiohttp"]
     tests_require.append("aiohttp")
 
 setup(
     name='cs',
-    version='2.5.4',
+    version='3.0.0a0',
     url='https://github.com/exoscale/cs',
     license='BSD',
     author='Bruno Renié',
@@ -46,14 +42,13 @@ setup(
         'License :: OSI Approved :: BSD License',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3 :: Only',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
     ),
+    python_require='>=3.4',
     setup_requires=['pytest-runner'],
     install_requires=install_requires,
     extras_require=extras_require,
