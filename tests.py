@@ -1,7 +1,6 @@
 # coding: utf-8
 import datetime
 import os
-import sys
 from contextlib import contextmanager
 from functools import partial
 from unittest import TestCase
@@ -51,20 +50,6 @@ def cwd(path):
 
 
 class ConfigTest(TestCase):
-
-    if sys.version_info < (2, 7):
-        def setUp(self):
-            super(ConfigTest, self).setUp()
-            self._cleanups = []
-
-        def addCleanup(self, fn, *args, **kwargs):
-            self._cleanups.append((fn, args, kwargs))
-
-        def tearDown(self):
-            super(ConfigTest, self).tearDown()
-            for fn, args, kwargs in self._cleanups:
-                fn(*args, **kwargs)
-
     def test_env_vars(self):
         with env(CLOUDSTACK_KEY='test key from env',
                  CLOUDSTACK_SECRET='test secret from env',
