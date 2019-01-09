@@ -1,9 +1,10 @@
-build
 dist
+build
+
 .coverage
 .eggs
 .tox
 *.egg-info
-.mypy_cache
+
 *.pyc
 .*_cache
