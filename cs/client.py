@@ -129,7 +129,6 @@ class CloudStackException(Exception):
     """Exception nicely wrapping a request response."""
     def __init__(self, *args, **kwargs):
         self.response = kwargs.pop('response')
-        assert self.response, "a response keyword argument is required"
         super(CloudStackException, self).__init__(*args, **kwargs)
 
 
