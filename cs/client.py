@@ -272,19 +272,26 @@ class CloudStack(object):
             contentType = response.headers.get("Content-Type", "")
             if not contentType.startswith(("application/json",
                                            "text/javascript")):
+                if response.status_code == 200:
+                    raise CloudStackException(
+                        "JSON (application/json) was expected, got {!r}"
+                        .format(contentType),
+                        response=response)
+
                 raise CloudStackException(
-                    "JSON (application/json) was expected, got {!r}"
-                    .format(contentType),
+                    "HTTP {0.status_code} {0.reason}"
+                    .format(response),
+                    "Make sure endpoint URL {!r} is correct."
+                    .format(self.endpoint),
                     response=response)
 
             try:
                 data = response.json()
             except ValueError as e:
-                msg = "Make sure endpoint URL '%s' is correct." % self.endpoint
                 raise CloudStackException(
-                    "HTTP {0} response from CloudStack"
-                    .format(response.status_code),
-                    "%s. " % str(e) + msg,
+                    "HTTP {0.status_code} {0.reason}"
+                    .format(response),
+                    "{0!s}. Malformed JSON document".format(e),
                     response=response)
 
             [key] = data.keys()

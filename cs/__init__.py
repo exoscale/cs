@@ -98,6 +98,8 @@ def main(args=None):
         config['trace'] = True
     cs = CloudStack(**config)
     ok = True
+    response = None
+
     try:
         response = getattr(cs, command)(fetch_result=fetch_result,
                                         **kwargs)
@@ -105,8 +107,9 @@ def main(args=None):
         ok = False
         if e.response is not None:
             if not options.quiet:
-                sys.stderr.write("Cloudstack error: HTTP response "
-                                 "{0}\n".format(e.response.status_code))
+                sys.stderr.write("CloudStack error: ")
+                sys.stderr.write("\n".join(e.args))
+                sys.stderr.write("\n")
 
             try:
                 response = json.loads(e.response.text)
