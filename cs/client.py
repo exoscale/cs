@@ -151,7 +151,7 @@ class CloudStack(object):
         self.cert = cert
         self.name = name
         self.retry = int(retry)
-        self.job_timeout = int(job_timeout) if job_timeout else 0
+        self.job_timeout = int(job_timeout) if job_timeout else None
         self.poll_interval = float(poll_interval)
         if not hasattr(expiration, "seconds"):
             expiration = timedelta(seconds=int(expiration))
