@@ -131,7 +131,10 @@ class CloudStackException(Exception):
     """Exception nicely wrapping a request response."""
     def __init__(self, *args, **kwargs):
         self.response = kwargs.pop('response')
-        super(CloudStackException, self).__init__(*args, **kwargs)
+        if kwargs:
+            raise TypeError("{0.__name__} takes no keyword arguments"
+                            .format(Exception))
+        super(CloudStackException, self).__init__(*args)
 
 
 class CloudStack(object):
