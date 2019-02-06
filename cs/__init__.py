@@ -108,7 +108,7 @@ def main(args=None):
         if e.response is not None:
             if not options.quiet:
                 sys.stderr.write("CloudStack error: ")
-                sys.stderr.write("\n".join(e.args))
+                sys.stderr.write("\n".join((str(arg) for arg in e.args)))
                 sys.stderr.write("\n")
 
             try:
