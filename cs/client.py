@@ -329,14 +329,36 @@ class CloudStack(object):
                 transform(params)
                 params['signature'] = self._sign(params)
 
-                response = getattr(requests, self.method)(self.endpoint,
-                                                          headers=headers,
-                                                          timeout=timeout,
-                                                          verify=self.verify,
-                                                          cert=self.cert,
-                                                          **{kind: params})
+                req = requests.Request(self.method,
+                                       self.endpoint,
+                                       headers=headers,
+                                       **{kind: params})
+                prepped = req.prepare()
+                if self.trace:
+                    print(prepped.method, prepped.url, file=sys.stderr)
+                    if prepped.headers:
+                        print(prepped.headers, "\n", file=sys.stderr)
+                    if prepped.body:
+                        print(prepped.body, file=sys.stderr)
+                    else:
+                        print(file=sys.stderr)
+
+                with requests.Session() as session:
+                    response = session.send(prepped,
+                                            timeout=timeout,
+                                            verify=self.verify,
+                                            cert=self.cert)
 
                 j = self._response_value(response, json)
+
+                if self.trace:
+                    print(response.status_code, response.reason,
+                          file=sys.stderr)
+                    headersTrace = "\n".join(
+                            "{}: {}".format(k, v)
+                            for k, v in response.headers.items())
+                    print(headersTrace, "\n", file=sys.stderr)
+                    print(response.text, "\n", file=sys.stderr)
 
                 failures = 0
                 if j['jobstatus'] != PENDING:
