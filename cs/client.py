@@ -456,7 +456,7 @@ def read_config_from_ini(ini_group=None):
     ini_config["name"] = ini_group
 
     # Convert individual header_* settings into a single dict
-    for k in ini_config.copy():
+    for k in list(ini_config):
         if k.startswith("header_"):
             if "headers" not in ini_config.keys():
                 ini_config["headers"] = {}
