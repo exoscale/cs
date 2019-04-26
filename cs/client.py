@@ -10,6 +10,7 @@ import sys
 import time
 from datetime import datetime, timedelta
 from distutils.util import strtobool
+from fnmatch import fnmatch
 
 try:
     from configparser import ConfigParser
@@ -80,7 +81,9 @@ def check_key(key, allowed):
     list of patterns.
     """
 
-    from fnmatch import fnmatch
+    if key in allowed:
+        return True
+
     for pattern in allowed:
         if fnmatch(key, pattern):
             return True
@@ -152,7 +155,7 @@ class CloudStack(object):
                  verify=None, cert=None, name=None, retry=0,
                  job_timeout=None, poll_interval=POLL_INTERVAL,
                  expiration=timedelta(minutes=10), trace=False,
-                 dangerous_no_tls_verify=False, headers={}):
+                 dangerous_no_tls_verify=False, headers=None):
         self.endpoint = endpoint
         self.key = key
         self.secret = secret
@@ -162,6 +165,8 @@ class CloudStack(object):
             self.verify = verify
         else:
             self.verify = not dangerous_no_tls_verify
+        if headers is None:
+            headers = {}
         self.headers = headers
         self.cert = cert
         self.name = name
@@ -202,10 +207,12 @@ class CloudStack(object):
         return kind, dict(params.items())
 
     def _request(self, command, json=True, opcode_name='command',
-                 fetch_list=False, headers={}, **params):
+                 fetch_list=False, headers=None, **params):
         fetch_result = params.pop('fetch_result', False)
         kind, params = self._prepare_request(command, json, opcode_name,
                                              fetch_list, **params)
+        if headers is None:
+            headers = {}
         headers.update(self.headers)
 
         done = False
@@ -458,8 +465,7 @@ def read_config_from_ini(ini_group=None):
     # Convert individual header_* settings into a single dict
     for k in list(ini_config):
         if k.startswith("header_"):
-            if "headers" not in ini_config.keys():
-                ini_config["headers"] = {}
+            ini_config.setdefault("headers", {})
             ini_config["headers"][k[len("header_"):]] = ini_config.pop(k)
     return ini_config
 
