@@ -448,9 +448,11 @@ def read_config_from_ini(ini_group=None):
         if not conf.has_section(ini_group):
             return dict(name=None)
 
-    ini_config = {k: v
-                  for k, v in conf.items(ini_group)
-                  if v and check_key(k, REQUIRED_CONFIG_KEYS.union(ALLOWED_CONFIG_KEYS))}
+    ini_config = {
+        k: v
+        for k, v in conf.items(ini_group)
+        if v and check_key(k, REQUIRED_CONFIG_KEYS.union(ALLOWED_CONFIG_KEYS))
+    }
     ini_config["name"] = ini_group
 
     # Convert individual header_* settings into a single dict
