@@ -141,6 +141,8 @@ class ConfigTest(TestCase):
                     'dangerous_no_tls_verify = true\n'
                     'theme = monokai\n'
                     'other = please ignore me\n'
+                    'header_x-custom-header1 = foo\n'
+                    'header_x-custom-header2 = bar\n'
                     'timeout = 50')
             self.addCleanup(partial(os.remove, '/tmp/cloudstack.ini'))
 
@@ -162,6 +164,10 @@ class ConfigTest(TestCase):
                 'retry': 0,
                 'method': 'get',
                 'cert': None,
+                'headers': {
+                    'x-custom-header1': 'foo',
+                    'x-custom-header2': 'bar',
+                },
             }, conf)
 
     def test_incomplete_config(self):

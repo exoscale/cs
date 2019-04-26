@@ -54,7 +54,8 @@ EXPIRES_FORMAT = "%Y-%m-%dT%H:%M:%S%z"
 
 REQUIRED_CONFIG_KEYS = {"endpoint", "key", "secret", "method", "timeout"}
 ALLOWED_CONFIG_KEYS = {"verify", "cert", "retry", "theme", "expiration",
-                       "poll_interval", "trace", "dangerous_no_tls_verify"}
+                       "poll_interval", "trace", "dangerous_no_tls_verify",
+                       "header_*"}
 DEFAULT_CONFIG = {
     "timeout": 10,
     "method": "get",
@@ -71,6 +72,20 @@ DEFAULT_CONFIG = {
 PENDING = 0
 SUCCESS = 1
 FAILURE = 2
+
+
+def check_key(key, allowed):
+    """
+    Validate that the specified key is allowed according the provided
+    list of patterns.
+    """
+
+    from fnmatch import fnmatch
+    for pattern in allowed:
+        if fnmatch(key, pattern):
+            return True
+
+    return False
 
 
 def cs_encode(s):
@@ -137,7 +152,7 @@ class CloudStack(object):
                  verify=None, cert=None, name=None, retry=0,
                  job_timeout=None, poll_interval=POLL_INTERVAL,
                  expiration=timedelta(minutes=10), trace=False,
-                 dangerous_no_tls_verify=False):
+                 dangerous_no_tls_verify=False, headers={}):
         self.endpoint = endpoint
         self.key = key
         self.secret = secret
@@ -147,7 +162,7 @@ class CloudStack(object):
             self.verify = verify
         else:
             self.verify = not dangerous_no_tls_verify
-
+        self.headers = headers
         self.cert = cert
         self.name = name
         self.retry = int(retry)
@@ -187,10 +202,11 @@ class CloudStack(object):
         return kind, dict(params.items())
 
     def _request(self, command, json=True, opcode_name='command',
-                 fetch_list=False, headers=None, **params):
+                 fetch_list=False, headers={}, **params):
         fetch_result = params.pop('fetch_result', False)
         kind, params = self._prepare_request(command, json, opcode_name,
                                              fetch_list, **params)
+        headers.update(self.headers)
 
         done = False
         max_retry = self.retry
@@ -432,11 +448,17 @@ def read_config_from_ini(ini_group=None):
         if not conf.has_section(ini_group):
             return dict(name=None)
 
-    all_keys = REQUIRED_CONFIG_KEYS.union(ALLOWED_CONFIG_KEYS)
     ini_config = {k: v
                   for k, v in conf.items(ini_group)
-                  if v and k in all_keys}
+                  if v and check_key(k, REQUIRED_CONFIG_KEYS.union(ALLOWED_CONFIG_KEYS))}
     ini_config["name"] = ini_group
+
+    # Convert individual header_* settings into a single dict
+    for k in ini_config.copy():
+        if k.startswith("header_"):
+            if "headers" not in ini_config.keys():
+                ini_config["headers"] = {}
+            ini_config["headers"][k.replace("header_", "")] = ini_config.pop(k)
     return ini_config
 
 
