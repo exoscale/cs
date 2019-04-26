@@ -460,7 +460,7 @@ def read_config_from_ini(ini_group=None):
         if k.startswith("header_"):
             if "headers" not in ini_config.keys():
                 ini_config["headers"] = {}
-            ini_config["headers"][k.replace("header_", "")] = ini_config.pop(k)
+            ini_config["headers"][k[len("header_"):]] = ini_config.pop(k)
     return ini_config
 
 
