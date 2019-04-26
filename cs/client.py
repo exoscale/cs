@@ -10,6 +10,7 @@ import sys
 import time
 from datetime import datetime, timedelta
 from distutils.util import strtobool
+from fnmatch import fnmatch
 
 try:
     from configparser import ConfigParser
@@ -54,7 +55,8 @@ EXPIRES_FORMAT = "%Y-%m-%dT%H:%M:%S%z"
 
 REQUIRED_CONFIG_KEYS = {"endpoint", "key", "secret", "method", "timeout"}
 ALLOWED_CONFIG_KEYS = {"verify", "cert", "retry", "theme", "expiration",
-                       "poll_interval", "trace", "dangerous_no_tls_verify"}
+                       "poll_interval", "trace", "dangerous_no_tls_verify",
+                       "header_*"}
 DEFAULT_CONFIG = {
     "timeout": 10,
     "method": "get",
@@ -71,6 +73,22 @@ DEFAULT_CONFIG = {
 PENDING = 0
 SUCCESS = 1
 FAILURE = 2
+
+
+def check_key(key, allowed):
+    """
+    Validate that the specified key is allowed according the provided
+    list of patterns.
+    """
+
+    if key in allowed:
+        return True
+
+    for pattern in allowed:
+        if fnmatch(key, pattern):
+            return True
+
+    return False
 
 
 def cs_encode(s):
@@ -137,7 +155,7 @@ class CloudStack(object):
                  verify=None, cert=None, name=None, retry=0,
                  job_timeout=None, poll_interval=POLL_INTERVAL,
                  expiration=timedelta(minutes=10), trace=False,
-                 dangerous_no_tls_verify=False):
+                 dangerous_no_tls_verify=False, headers=None):
         self.endpoint = endpoint
         self.key = key
         self.secret = secret
@@ -147,7 +165,9 @@ class CloudStack(object):
             self.verify = verify
         else:
             self.verify = not dangerous_no_tls_verify
-
+        if headers is None:
+            headers = {}
+        self.headers = headers
         self.cert = cert
         self.name = name
         self.retry = int(retry)
@@ -191,6 +211,9 @@ class CloudStack(object):
         fetch_result = params.pop('fetch_result', False)
         kind, params = self._prepare_request(command, json, opcode_name,
                                              fetch_list, **params)
+        if headers is None:
+            headers = {}
+        headers.update(self.headers)
 
         done = False
         max_retry = self.retry
@@ -432,11 +455,18 @@ def read_config_from_ini(ini_group=None):
         if not conf.has_section(ini_group):
             return dict(name=None)
 
-    all_keys = REQUIRED_CONFIG_KEYS.union(ALLOWED_CONFIG_KEYS)
-    ini_config = {k: v
-                  for k, v in conf.items(ini_group)
-                  if v and k in all_keys}
+    ini_config = {
+        k: v
+        for k, v in conf.items(ini_group)
+        if v and check_key(k, REQUIRED_CONFIG_KEYS.union(ALLOWED_CONFIG_KEYS))
+    }
     ini_config["name"] = ini_group
+
+    # Convert individual header_* settings into a single dict
+    for k in list(ini_config):
+        if k.startswith("header_"):
+            ini_config.setdefault("headers", {})
+            ini_config["headers"][k[len("header_"):]] = ini_config.pop(k)
     return ini_config
 
 
