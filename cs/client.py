@@ -225,7 +225,7 @@ class CloudStack(object):
 
             transform(params)
             params.pop('signature', None)
-            params['signature'] = self._sign(params)
+            self._sign(params)
 
             req = requests.Request(self.method,
                                    self.endpoint,
@@ -350,7 +350,7 @@ class CloudStack(object):
                                                      jobid=jobid)
 
                 transform(params)
-                params['signature'] = self._sign(params)
+                self._sign(params)
 
                 req = requests.Request(self.method,
                                        self.endpoint,
@@ -430,7 +430,7 @@ class CloudStack(object):
             msg=params.lower().encode('utf-8'),
             digestmod=hashlib.sha1).digest()
 
-        return base64.b64encode(digest).decode('utf-8').strip()
+        data['signature'] = base64.b64encode(digest).decode('utf-8').strip()
 
 
 def read_config_from_ini(ini_group=None):
