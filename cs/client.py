@@ -168,6 +168,12 @@ class CloudStackException(Exception):
         super(CloudStackException, self).__init__(*args, **kwargs)
 
 
+class CloudStackApiException(CloudStackException):
+    def __init__(self, *args, **kwargs):
+        self.error = kwargs.pop('error')
+        super(CloudStackApiException, self).__init__(*args, **kwargs)
+
+
 class CloudStack(object):
     def __init__(self, endpoint, key, secret, timeout=10, method='get',
                  verify=None, cert=None, name=None, retry=0,
@@ -341,10 +347,10 @@ class CloudStack(object):
             data = response.text
 
         if response.status_code != 200:
-            raise CloudStackException(
+            raise CloudStackApiException(
                 "HTTP {0} response from CloudStack".format(
                     response.status_code),
-                data,
+                error=data,
                 response=response)
 
         return data
@@ -404,8 +410,9 @@ class CloudStack(object):
                 failures = 0
                 if j['jobstatus'] != PENDING:
                     if j['jobresultcode'] or j['jobstatus'] != SUCCESS:
-                        raise CloudStackException("Job failure",
-                                                  response=response)
+                        raise CloudStackApiException("Job failure",
+                                                     error=j['jobresult'],
+                                                     response=response)
 
                     if 'jobresult' not in j:
                         raise CloudStackException("Unknown job result",
@@ -416,10 +423,10 @@ class CloudStack(object):
             except CloudStackException:
                 raise
 
-            except Exception as e:
+            except Exception:
                 failures += 1
                 if failures > 10:
-                    raise e
+                    raise
 
             time.sleep(self.poll_interval)
             remaining = endtime - datetime.now()
