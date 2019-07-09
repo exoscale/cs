@@ -1,6 +1,5 @@
 import asyncio
 import ssl
-import warnings
 
 import aiohttp
 
@@ -16,11 +15,7 @@ class AIOCloudStack(CloudStack):
 
     async def _request(self, command, json=True, opcode_name='command',
                        fetch_list=False, headers=None, **params):
-        if "fetch_result" not in params:
-            warnings.warn("implicit job polling is deprecated. To pull the "
-                          "job result in future releases, please pass "
-                          "fetch_result=True")
-        fetch_result = params.pop("fetch_result", True)
+        fetch_result = params.pop("fetch_result", self.fetch_result)
         kwarg, kwargs = self._prepare_request(command, json, opcode_name,
                                               fetch_list, **params)
 
