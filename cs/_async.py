@@ -4,8 +4,8 @@ import warnings
 
 import aiohttp
 
-from . import CloudStack, CloudStackException
-from .client import transform
+from . import CloudStack, CloudStackApiException, CloudStackException
+from .client import PENDING, SUCCESS, transform
 
 
 class AIOCloudStack(CloudStack):
@@ -58,15 +58,16 @@ class AIOCloudStack(CloudStack):
                     raise CloudStackException(
                         "HTTP {0} response from CloudStack".format(
                             response.status),
-                        response,
-                        "{}. {}".format(e, msg))
+                        "{}. {}".format(e, msg),
+                        response=response,
+                    )
 
                 [key] = data.keys()
                 data = data[key]
                 if response.status != 200:
-                    raise CloudStackException(
+                    raise CloudStackApiException(
                         "HTTP {0} response from CloudStack".format(
-                            response.status), response, data)
+                            response.status), error=data, response=response)
                 if fetch_list:
                     try:
                         [key] = [k for k in data.keys() if k != 'count']
@@ -78,29 +79,33 @@ class AIOCloudStack(CloudStack):
                 elif fetch_result and 'jobid' in data:
                     try:
                         final_data = await asyncio.wait_for(
-                            self._jobresult(data['jobid']),
+                            self._jobresult(data['jobid'], response),
                             self.job_timeout)
                     except asyncio.TimeoutError:
                         raise CloudStackException(
                             "Timeout waiting for async job result",
-                            data['jobid'])
+                            data['jobid'],
+                            response=response)
                     done = True
                 else:
                     final_data = data
                     done = True
             return final_data
 
-    async def _jobresult(self, jobid):
+    async def _jobresult(self, jobid, response):
         failures = 0
         while True:
             try:
                 j = await self.queryAsyncJobResult(jobid=jobid)
                 failures = 0
-                if j['jobstatus'] != 0:
-                    if j['jobresultcode'] != 0 or j['jobstatus'] != 1:
-                        raise CloudStackException("Job failure", j)
+                if j['jobstatus'] != PENDING:
+                    if j['jobresultcode'] != 0 or j['jobstatus'] != SUCCESS:
+                        raise CloudStackApiException("Job failure", j,
+                                                     error=j['jobresult'],
+                                                     response=response)
                     if 'jobresult' not in j:
-                        raise CloudStackException("Unknown job result", j)
+                        raise CloudStackException("Unknown job result", j,
+                                                  response=response)
                     return j['jobresult']
 
             except CloudStackException:
