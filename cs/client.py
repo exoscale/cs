@@ -173,7 +173,8 @@ class CloudStack(object):
                  verify=None, cert=None, name=None, retry=0,
                  job_timeout=None, poll_interval=POLL_INTERVAL,
                  expiration=timedelta(minutes=10), trace=False,
-                 dangerous_no_tls_verify=False, headers=None):
+                 dangerous_no_tls_verify=False, headers=None,
+                 fetch_result=False):
         self.endpoint = endpoint
         self.key = key
         self.secret = secret
@@ -195,6 +196,7 @@ class CloudStack(object):
             expiration = timedelta(seconds=int(expiration))
         self.expiration = expiration
         self.trace = bool(trace)
+        self.fetch_result = fetch_result
 
     def __repr__(self):
         return '<CloudStack: {0}>'.format(self.name or self.endpoint)
@@ -226,7 +228,7 @@ class CloudStack(object):
 
     def _request(self, command, json=True, opcode_name='command',
                  fetch_list=False, headers=None, **params):
-        fetch_result = params.pop('fetch_result', False)
+        fetch_result = params.pop('fetch_result', self.fetch_result)
         kind, params = self._prepare_request(command, json, opcode_name,
                                              fetch_list, **params)
         if headers is None:
