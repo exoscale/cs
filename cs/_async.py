@@ -44,7 +44,7 @@ class AIOCloudStack(CloudStack):
 
                 transform(kwargs)
                 kwargs.pop('signature', None)
-                kwargs['signature'] = self._sign(kwargs)
+                self._sign(kwargs)
                 response = await handler(self.endpoint,
                                          headers=headers,
                                          **{kwarg: kwargs})
@@ -94,7 +94,8 @@ class AIOCloudStack(CloudStack):
         failures = 0
         while True:
             try:
-                j = await self.queryAsyncJobResult(jobid=jobid)
+                j = await self.queryAsyncJobResult(jobid=jobid,
+                                                   fetch_result=False)
                 failures = 0
                 if j['jobstatus'] != 0:
                     if j['jobresultcode'] != 0 or j['jobstatus'] != 1:
