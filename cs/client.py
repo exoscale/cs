@@ -180,7 +180,7 @@ class CloudStack(object):
                  job_timeout=None, poll_interval=POLL_INTERVAL,
                  expiration=timedelta(minutes=10), trace=False,
                  dangerous_no_tls_verify=False, headers=None,
-                 fetch_result=False):
+                 session=None, fetch_result=False):
         self.endpoint = endpoint
         self.key = key
         self.secret = secret
@@ -193,6 +193,7 @@ class CloudStack(object):
         if headers is None:
             headers = {}
         self.headers = headers
+        self.session = session if session is not None else requests.Session()
         self.cert = cert
         self.name = name
         self.retry = int(retry)
@@ -268,7 +269,7 @@ class CloudStack(object):
                     print(file=sys.stderr)
 
             try:
-                with requests.Session() as session:
+                with self.session as session:
                     response = session.send(prepped,
                                             timeout=self.timeout,
                                             verify=self.verify,
@@ -392,7 +393,7 @@ class CloudStack(object):
                     else:
                         print(file=sys.stderr)
 
-                with requests.Session() as session:
+                with self.session as session:
                     response = session.send(prepped,
                                             timeout=timeout,
                                             verify=self.verify,
