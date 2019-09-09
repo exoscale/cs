@@ -248,5 +248,17 @@ ________________________________
 Links
 -----
 
+Release Procedure
+-----------------
+
+.. code-block:: shell-session
+
+    mktmpenv -p /usr/bin/python3
+    pip install -U twine wheel
+    cd exoscale/cs
+    rm -rf build dist
+    python setup.py sdist bdist_wheel
+    twine upload dist/*
+
 * CloudStack API: http://cloudstack.apache.org/api.html
 * Example of use: `Get Started with the exoscale API client <https://www.exoscale.com/syslog/2016/02/23/get-started-with-the-exoscale-api-client/>`_
