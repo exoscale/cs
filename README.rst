@@ -245,6 +245,18 @@ ________________________________
 
     asyncio.run(main())
 
+Release Procedure
+-----------------
+
+.. code-block:: shell-session
+
+    mktmpenv -p /usr/bin/python3
+    pip install -U twine wheel
+    cd exoscale/cs
+    rm -rf build dist
+    python setup.py sdist bdist_wheel
+    twine upload dist/*
+
 Links
 -----
 
