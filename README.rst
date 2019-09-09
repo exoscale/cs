@@ -245,9 +245,6 @@ ________________________________
 
     asyncio.run(main())
 
-Links
------
-
 Release Procedure
 -----------------
 
@@ -259,6 +256,9 @@ Release Procedure
     rm -rf build dist
     python setup.py sdist bdist_wheel
     twine upload dist/*
+
+Links
+-----
 
 * CloudStack API: http://cloudstack.apache.org/api.html
 * Example of use: `Get Started with the exoscale API client <https://www.exoscale.com/syslog/2016/02/23/get-started-with-the-exoscale-api-client/>`_
