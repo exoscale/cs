@@ -110,6 +110,11 @@ def main(args=None):
                 sys.stderr.write("CloudStack error: ")
                 sys.stderr.write("\n".join((str(arg) for arg in e.args)))
                 sys.stderr.write("\n")
+                ddata = response.json()
+                k,val = ddata.popitem()
+                sys.stderr.write("cserrorcode {0}: {1}".format(val['cserrorcode'], val['errortext']))
+                sys.stderr.write("\n")
+                                
 
             try:
                 response = json.loads(e.response.text)
