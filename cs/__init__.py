@@ -17,10 +17,15 @@ try:
 except ImportError:
     pygments = None
 
-from .client import read_config, CloudStack, CloudStackApiException, CloudStackException  # noqa
+from .client import (
+    read_config,
+    CloudStack,
+    CloudStackApiException,
+    CloudStackException )  # noqa
 
 
-__all__ = ['read_config', 'CloudStack', 'CloudStackException', 'CloudStackApiException']
+__all__ = ['read_config', 'CloudStack', 'CloudStackException',
+           'CloudStackApiException']
 
 if sys.version_info >= (3, 5):
     try:
