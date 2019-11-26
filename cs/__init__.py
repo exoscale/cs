@@ -20,7 +20,7 @@ except ImportError:
 from .client import read_config, CloudStack, CloudStackApiException, CloudStackException  # noqa
 
 
-__all__ = ['read_config', 'CloudStack', 'CloudStackException']
+__all__ = ['read_config', 'CloudStack', 'CloudStackException', 'CloudStackApiException']
 
 if sys.version_info >= (3, 5):
     try:
