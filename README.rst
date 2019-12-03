@@ -46,7 +46,7 @@ In Python:
 
     from cs import CloudStack
 
-    cs = CloudStack(endpoint='https://api.exoscale.ch/compute',
+    cs = CloudStack(endpoint='https://api.exoscale.ch/v1',
                     key='cloudstack api key',
                     secret='cloudstack api secret')
 
@@ -63,7 +63,7 @@ From the command-line, this requires some configuration:
 .. code-block:: ini
 
     [cloudstack]
-    endpoint = https://api.exoscale.ch/compute
+    endpoint = https://api.exoscale.ch/v1
     key = cloudstack api key
     secret = cloudstack api secret
     # Optional ca authority certificate
@@ -157,12 +157,12 @@ the credentials or endpoint to use with a command-line flag.
 .. code-block:: ini
 
     [cloudstack]
-    endpoint = https://some-host/api/compute
+    endpoint = https://some-host/api/v1
     key = api key
     secret = api secret
 
     [exoscale]
-    endpoint = https://api.exoscale.ch/compute
+    endpoint = https://api.exoscale.ch/v1
     key = api key
     secret = api secret
 
