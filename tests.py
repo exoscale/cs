@@ -15,7 +15,12 @@ try:
 except ImportError:
     from urlparse import urlparse, parse_qs
 
-from cs import CloudStack, CloudStackException, read_config
+from cs import (
+    CloudStack,
+    CloudStackApiException,
+    CloudStackException,
+    read_config
+)
 from cs.client import EXPIRES_FORMAT
 
 from requests.structures import CaseInsensitiveDict
@@ -47,6 +52,15 @@ def cwd(path):
             yield
     finally:
         os.chdir(initial)
+
+
+class ExceptionTest(TestCase):
+
+    def test_api_exception_str(self):
+        e = CloudStackApiException("CS failed",
+                                   error={"test": 42},
+                                   response=None)
+        self.assertEqual("CS failed, error: {'test': 42}", str(e))
 
 
 class ConfigTest(TestCase):
