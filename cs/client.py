@@ -173,6 +173,12 @@ class CloudStackApiException(CloudStackException):
         self.error = kwargs.pop('error')
         super(CloudStackApiException, self).__init__(*args, **kwargs)
 
+    def __str__(self):
+        return '{0}, error: {1}'.format(
+            super(CloudStackApiException, self).__str__(),
+            self.error
+        )
+
 
 class CloudStack(object):
     def __init__(self, endpoint, key, secret, timeout=10, method='get',

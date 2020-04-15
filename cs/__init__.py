@@ -18,10 +18,11 @@ except ImportError:
     pygments = None
 
 from .client import (
-    read_config,
     CloudStack,
     CloudStackApiException,
-    CloudStackException )  # noqa
+    CloudStackException,
+    read_config
+)
 
 
 __all__ = ['read_config', 'CloudStack', 'CloudStackException',
