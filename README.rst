@@ -15,8 +15,7 @@ CS
 
 A simple, yet powerful CloudStack API client for python and the command-line.
 
-* Python 2.7+ and 3.4+ support.
-* Async support for Python 3.5+.
+* Async support.
 * All present and future CloudStack API calls and parameters are supported.
 * Syntax highlight in the command-line client if Pygments is installed.
 * BSD license.
@@ -31,7 +30,7 @@ Installation
     # with the colored output
     pip install cs[highlight]
 
-    # with the async support (Python 3.5+)
+    # with the async support
     pip install cs[async]
 
     # with both
