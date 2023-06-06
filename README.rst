@@ -69,6 +69,8 @@ From the command-line, this requires some configuration:
     verify = /path/to/certs/exoscale_ca.crt
     # Optional client PEM certificate
     cert = /path/to/client_exoscale.pem
+    # If you need to pass the certificate and key as separate files
+    cert_key = /path/to/client_key.pem
 
 Then:
 
@@ -110,6 +112,7 @@ Configuration is read from several locations, in the following order:
 * A ``CLOUDSTACK_CONFIG`` environment variable pointing to an ``.ini`` file,
 * A ``CLOUDSTACK_VERIFY`` (optional) environment variable pointing to a CA authority cert file,
 * A ``CLOUDSTACK_CERT`` (optional) environment variable pointing to a client PEM cert file,
+* A ``CLOUDSTACK_CERT_KEY`` (optional) environment variable pointing to a client PEM certificate key file,
 * A ``cloudstack.ini`` file in the current working directory,
 * A ``.cloudstack.ini`` file in the home directory.
 
