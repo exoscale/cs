@@ -53,15 +53,25 @@ EXPIRATION = timedelta(minutes=10)
 EXPIRES_FORMAT = "%Y-%m-%dT%H:%M:%S%z"
 
 REQUIRED_CONFIG_KEYS = {"endpoint", "key", "secret", "method", "timeout"}
-ALLOWED_CONFIG_KEYS = {"verify", "cert", "retry", "theme", "expiration",
-                       "poll_interval", "trace", "dangerous_no_tls_verify",
-                       "header_*"}
+ALLOWED_CONFIG_KEYS = {
+    "verify",
+    "cert",
+    "cert_key",
+    "retry",
+    "theme",
+    "expiration",
+    "poll_interval",
+    "trace",
+    "dangerous_no_tls_verify",
+    "header_*",
+}
 DEFAULT_CONFIG = {
     "timeout": 10,
     "method": "get",
     "retry": 0,
     "verify": None,
     "cert": None,
+    "cert_key": None,
     "name": None,
     "expiration": 600,
     "poll_interval": POLL_INTERVAL,
@@ -163,30 +173,45 @@ def transform(params):
 
 class CloudStackException(Exception):
     """Exception nicely wrapping a request response."""
+
     def __init__(self, *args, **kwargs):
-        self.response = kwargs.pop('response')
+        self.response = kwargs.pop("response")
         super(CloudStackException, self).__init__(*args, **kwargs)
 
 
 class CloudStackApiException(CloudStackException):
     def __init__(self, *args, **kwargs):
-        self.error = kwargs.pop('error')
+        self.error = kwargs.pop("error")
         super(CloudStackApiException, self).__init__(*args, **kwargs)
 
     def __str__(self):
-        return '{0}, error: {1}'.format(
-            super(CloudStackApiException, self).__str__(),
-            self.error
+        return "{0}, error: {1}".format(
+            super(CloudStackApiException, self).__str__(), self.error
         )
 
 
 class CloudStack(object):
-    def __init__(self, endpoint, key, secret, timeout=10, method='get',
-                 verify=None, cert=None, name=None, retry=0,
-                 job_timeout=None, poll_interval=POLL_INTERVAL,
-                 expiration=timedelta(minutes=10), trace=False,
-                 dangerous_no_tls_verify=False, headers=None,
-                 session=None, fetch_result=False):
+    def __init__(
+        self,
+        endpoint,
+        key,
+        secret,
+        timeout=10,
+        method="get",
+        verify=None,
+        cert=None,
+        cert_key=None,
+        name=None,
+        retry=0,
+        job_timeout=None,
+        poll_interval=POLL_INTERVAL,
+        expiration=timedelta(minutes=10),
+        trace=False,
+        dangerous_no_tls_verify=False,
+        headers=None,
+        session=None,
+        fetch_result=False,
+    ):
         self.endpoint = endpoint
         self.key = key
         self.secret = secret
@@ -200,6 +225,8 @@ class CloudStack(object):
             headers = {}
         self.headers = headers
         self.session = session if session is not None else requests.Session()
+        if cert and cert_key:
+            cert = (cert, cert_key)
         self.cert = cert
         self.name = name
         self.retry = int(retry)
