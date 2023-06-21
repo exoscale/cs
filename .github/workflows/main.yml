@@ -1,0 +1,53 @@
+---
+name: CI
+
+"on":
+  push:
+    branches:
+      - '**'
+    paths-ignore:
+      - '**.md'
+      - '**.rst'
+      - '**.txt'
+    tags-ignore:
+      - 'v**'  # Don't run CI tests on release tags
+
+jobs:
+  tests:
+    name: Tests on ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.8', '3.9', '3.10', '3.11']
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: "Install dependencies"
+        run: |
+          python -VV
+          python -m site
+          python -m pip install -U pip wheel setuptools
+          python -m pip install -U tox tox-gh-actions
+      - name: Tests
+        run: tox
+  lint:
+    name: Linting
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      - name: "Install dependencies"
+        run: |
+          python -VV
+          python -m site
+          python -m pip install -U pip wheel setuptools
+          python -m pip install -U black flake8 flake8-import-order flake8-bugbear
+      - name: Lint
+        run: |
+          black --check --diff .
+          flake8 .
