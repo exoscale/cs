@@ -21,12 +21,16 @@ from .client import (
     CloudStack,
     CloudStackApiException,
     CloudStackException,
-    read_config
+    read_config,
 )
 
 
-__all__ = ['read_config', 'CloudStack', 'CloudStackException',
-           'CloudStackApiException']
+__all__ = [
+    "read_config",
+    "CloudStack",
+    "CloudStackException",
+    "CloudStackApiException",
+]
 
 if sys.version_info >= (3, 5):
     try:
@@ -35,7 +39,8 @@ if sys.version_info >= (3, 5):
         pass
     else:
         from ._async import AIOCloudStack  # noqa
-        __all__.append('AIOCloudStack')
+
+        __all__.append("AIOCloudStack")
 
 
 def _format_json(data, theme):
@@ -51,36 +56,64 @@ def _format_json(data, theme):
 
 
 def main(args=None):
-    parser = argparse.ArgumentParser(description='Cloustack client.')
-    parser.add_argument('--region', '-r', metavar='REGION',
-                        help='Cloudstack region in ~/.cloudstack.ini',
-                        default=os.environ.get('CLOUDSTACK_REGION',
-                                               'cloudstack'))
-    parser.add_argument('--theme', metavar='THEME',
-                        help='Pygments style',
-                        default=os.environ.get('CLOUDSTACK_THEME',
-                                               'default'))
-    parser.add_argument('--post', action='store_true', default=False,
-                        help='use POST instead of GET')
-    parser.add_argument('--async', action='store_true', default=False,
-                        help='do not wait for async result')
-    parser.add_argument('--quiet', '-q', action='store_true', default=False,
-                        help='do not display additional status messages')
-    parser.add_argument('--trace', '-t', action='store_true',
-                        default=os.environ.get('CLOUDSTACK_TRACE', False),
-                        help='trace the HTTP requests done on stderr')
-    parser.add_argument('command', metavar="COMMAND",
-                        help='Cloudstack API command to execute')
+    parser = argparse.ArgumentParser(description="Cloustack client.")
+    parser.add_argument(
+        "--region",
+        "-r",
+        metavar="REGION",
+        help="Cloudstack region in ~/.cloudstack.ini",
+        default=os.environ.get("CLOUDSTACK_REGION", "cloudstack"),
+    )
+    parser.add_argument(
+        "--theme",
+        metavar="THEME",
+        help="Pygments style",
+        default=os.environ.get("CLOUDSTACK_THEME", "default"),
+    )
+    parser.add_argument(
+        "--post",
+        action="store_true",
+        default=False,
+        help="use POST instead of GET",
+    )
+    parser.add_argument(
+        "--async",
+        action="store_true",
+        default=False,
+        help="do not wait for async result",
+    )
+    parser.add_argument(
+        "--quiet",
+        "-q",
+        action="store_true",
+        default=False,
+        help="do not display additional status messages",
+    )
+    parser.add_argument(
+        "--trace",
+        "-t",
+        action="store_true",
+        default=os.environ.get("CLOUDSTACK_TRACE", False),
+        help="trace the HTTP requests done on stderr",
+    )
+    parser.add_argument(
+        "command", metavar="COMMAND", help="Cloudstack API command to execute"
+    )
 
     def parse_option(x):
-        if '=' not in x:
-            raise ValueError("{!r} is not a correctly formatted "
-                             "option".format(x))
-        return x.split('=', 1)
+        if "=" not in x:
+            raise ValueError(
+                "{!r} is not a correctly formatted " "option".format(x)
+            )
+        return x.split("=", 1)
 
-    parser.add_argument('arguments', metavar="OPTION=VALUE",
-                        nargs='*', type=parse_option,
-                        help='Cloudstack API argument')
+    parser.add_argument(
+        "arguments",
+        metavar="OPTION=VALUE",
+        nargs="*",
+        type=parse_option,
+        help="Cloudstack API argument",
+    )
 
     options = parser.parse_args(args=args)
     command = options.command
@@ -94,21 +127,20 @@ def main(args=None):
     except NoSectionError:
         raise SystemExit("Error: region '%s' not in config" % options.region)
 
-    theme = config.pop('theme', 'default')
+    theme = config.pop("theme", "default")
 
-    fetch_result = 'Async' not in command and not getattr(options, 'async')
+    fetch_result = "Async" not in command and not getattr(options, "async")
 
     if options.post:
-        config['method'] = 'post'
+        config["method"] = "post"
     if options.trace:
-        config['trace'] = True
+        config["trace"] = True
     cs = CloudStack(**config)
     ok = True
     response = None
 
     try:
-        response = getattr(cs, command)(fetch_result=fetch_result,
-                                        **kwargs)
+        response = getattr(cs, command)(fetch_result=fetch_result, **kwargs)
     except CloudStackException as e:
         ok = False
         if e.response is not None:
@@ -128,6 +160,6 @@ def main(args=None):
 
     if response:
         sys.stdout.write(_format_json(response, theme=theme))
-        sys.stdout.write('\n')
+        sys.stdout.write("\n")
 
     return not ok

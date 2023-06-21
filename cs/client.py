@@ -95,9 +95,9 @@ def strtobool(val):
     to avoid pulling a dependency on deprecated module "imp".
     """
     val = val.lower()
-    if val in ('y', 'yes', 't', 'true', 'on', '1'):
+    if val in ("y", "yes", "t", "true", "on", "1"):
         return 1
-    elif val in ('n', 'no', 'f', 'false', 'off', '0'):
+    elif val in ("n", "no", "f", "false", "off", "0"):
         return 0
     else:
         raise ValueError("invalid truth value %r" % (val,))
@@ -190,6 +190,9 @@ class CloudStackApiException(CloudStackException):
         )
 
 
+ten_minutes = timedelta(minutes=10)
+
+
 class CloudStack(object):
     def __init__(
         self,
@@ -205,7 +208,7 @@ class CloudStack(object):
         retry=0,
         job_timeout=None,
         poll_interval=POLL_INTERVAL,
-        expiration=timedelta(minutes=10),
+        expiration=ten_minutes,
         trace=False,
         dangerous_no_tls_verify=False,
         headers=None,
@@ -239,38 +242,55 @@ class CloudStack(object):
         self.fetch_result = fetch_result
 
     def __repr__(self):
-        return '<CloudStack: {0}>'.format(self.name or self.endpoint)
+        return "<CloudStack: {0}>".format(self.name or self.endpoint)
 
     def __getattr__(self, command):
         def handler(**kwargs):
             return self._request(command, **kwargs)
+
         return handler
 
-    def _prepare_request(self, command, json=True, opcode_name='command',
-                         fetch_list=False, **kwargs):
+    def _prepare_request(
+        self,
+        command,
+        json=True,
+        opcode_name="command",
+        fetch_list=False,
+        **kwargs,
+    ):
         params = CaseInsensitiveDict(**kwargs)
-        params.update({
-            'apiKey': self.key,
-            opcode_name: command,
-        })
+        params.update(
+            {
+                "apiKey": self.key,
+                opcode_name: command,
+            }
+        )
         if json:
-            params['response'] = 'json'
-        if 'page' in kwargs or fetch_list:
-            params.setdefault('pagesize', PAGE_SIZE)
-        if 'expires' not in params and self.expiration.total_seconds() >= 0:
-            params['signatureVersion'] = '3'
+            params["response"] = "json"
+        if "page" in kwargs or fetch_list:
+            params.setdefault("pagesize", PAGE_SIZE)
+        if "expires" not in params and self.expiration.total_seconds() >= 0:
+            params["signatureVersion"] = "3"
             tz = pytz.utc
             expires = tz.localize(datetime.utcnow() + self.expiration)
-            params['expires'] = expires.astimezone(tz).strftime(EXPIRES_FORMAT)
+            params["expires"] = expires.astimezone(tz).strftime(EXPIRES_FORMAT)
 
-        kind = 'params' if self.method == 'get' else 'data'
+        kind = "params" if self.method == "get" else "data"
         return kind, dict(params.items())
 
-    def _request(self, command, json=True, opcode_name='command',
-                 fetch_list=False, headers=None, **params):
-        fetch_result = params.pop('fetch_result', self.fetch_result)
-        kind, params = self._prepare_request(command, json, opcode_name,
-                                             fetch_list, **params)
+    def _request(
+        self,
+        command,
+        json=True,
+        opcode_name="command",
+        fetch_list=False,
+        headers=None,
+        **params,
+    ):
+        fetch_result = params.pop("fetch_result", self.fetch_result)
+        kind, params = self._prepare_request(
+            command, json, opcode_name, fetch_list, **params
+        )
         if headers is None:
             headers = {}
         headers.update(self.headers)
@@ -281,16 +301,15 @@ class CloudStack(object):
         page = 1
         while not done:
             if fetch_list:
-                params['page'] = page
+                params["page"] = page
 
             transform(params)
-            params.pop('signature', None)
+            params.pop("signature", None)
             self._sign(params)
 
-            req = requests.Request(self.method,
-                                   self.endpoint,
-                                   headers=headers,
-                                   **{kind: params})
+            req = requests.Request(
+                self.method, self.endpoint, headers=headers, **{kind: params}
+            )
             prepped = req.prepare()
             if self.trace:
                 print(prepped.method, prepped.url, file=sys.stderr)
@@ -303,16 +322,17 @@ class CloudStack(object):
 
             try:
                 with self.session as session:
-                    response = session.send(prepped,
-                                            timeout=self.timeout,
-                                            verify=self.verify,
-                                            cert=self.cert)
+                    response = session.send(
+                        prepped,
+                        timeout=self.timeout,
+                        verify=self.verify,
+                        cert=self.cert,
+                    )
 
             except requests.exceptions.ConnectionError:
                 max_retry -= 1
-                if (
-                    max_retry < 0 or
-                    not command.startswith(('list', 'queryAsync'))
+                if max_retry < 0 or not command.startswith(
+                    ("list", "queryAsync")
                 ):
                     raise
                 continue
@@ -320,8 +340,9 @@ class CloudStack(object):
 
             if self.trace:
                 print(response.status_code, response.reason, file=sys.stderr)
-                headersTrace = "\n".join("{}: {}".format(k, v)
-                                         for k, v in response.headers.items())
+                headersTrace = "\n".join(
+                    "{}: {}".format(k, v) for k, v in response.headers.items()
+                )
                 print(headersTrace, "\n", file=sys.stderr)
                 print(response.text, "\n", file=sys.stderr)
 
@@ -329,17 +350,18 @@ class CloudStack(object):
 
             if fetch_list:
                 try:
-                    [key] = [k for k in data.keys() if k != 'count']
+                    [key] = [k for k in data.keys() if k != "count"]
                 except ValueError:
                     done = True
                 else:
                     final_data.extend(data[key])
                     page += 1
-                    if len(final_data) >= data.get('count', PAGE_SIZE):
+                    if len(final_data) >= data.get("count", PAGE_SIZE):
                         done = True
-            elif fetch_result and 'jobid' in data:
-                final_data = self._jobresult(jobid=data['jobid'],
-                                             headers=headers)
+            elif fetch_result and "jobid" in data:
+                final_data = self._jobresult(
+                    jobid=data["jobid"], headers=headers
+                )
                 done = True
             else:
                 final_data = data
@@ -352,30 +374,30 @@ class CloudStack(object):
         It throws an exception if the server didn't answer with a 200.
         """
         if json:
-            contentType = response.headers.get("Content-Type", "")
-            if not contentType.startswith(("application/json",
-                                           "text/javascript")):
+            ctype = response.headers.get("Content-Type", "")
+            if not ctype.startswith(("application/json", "text/javascript")):
                 if response.status_code == 200:
-                    raise CloudStackException(
-                        "JSON (application/json) was expected, got {!r}"
-                        .format(contentType),
-                        response=response)
+                    msg = (
+                        f"JSON (application/json) was expected, got {ctype:!r}"
+                    )
+                    raise CloudStackException(msg, response=response)
 
                 raise CloudStackException(
-                    "HTTP {0.status_code} {0.reason}"
-                    .format(response),
-                    "Make sure endpoint URL {!r} is correct."
-                    .format(self.endpoint),
-                    response=response)
+                    "HTTP {0.status_code} {0.reason}".format(response),
+                    "Make sure endpoint URL {!r} is correct.".format(
+                        self.endpoint
+                    ),
+                    response=response,
+                )
 
             try:
                 data = response.json()
             except ValueError as e:
                 raise CloudStackException(
-                    "HTTP {0.status_code} {0.reason}"
-                    .format(response),
+                    "HTTP {0.status_code} {0.reason}".format(response),
                     "{0!s}. Malformed JSON document".format(e),
-                    response=response)
+                    response=response,
+                )
 
             [key] = data.keys()
             data = data[key]
@@ -385,9 +407,11 @@ class CloudStack(object):
         if response.status_code != 200:
             raise CloudStackApiException(
                 "HTTP {0} response from CloudStack".format(
-                    response.status_code),
+                    response.status_code
+                ),
                 error=data,
-                response=response)
+                response=response,
+            )
 
         return data
 
@@ -406,16 +430,19 @@ class CloudStack(object):
         while remaining.total_seconds() > 0:
             timeout = max(min(self.timeout, remaining.total_seconds()), 1)
             try:
-                kind, params = self._prepare_request('queryAsyncJobResult',
-                                                     jobid=jobid)
+                kind, params = self._prepare_request(
+                    "queryAsyncJobResult", jobid=jobid
+                )
 
                 transform(params)
                 self._sign(params)
 
-                req = requests.Request(self.method,
-                                       self.endpoint,
-                                       headers=headers,
-                                       **{kind: params})
+                req = requests.Request(
+                    self.method,
+                    self.endpoint,
+                    headers=headers,
+                    **{kind: params},
+                )
                 prepped = req.prepare()
                 if self.trace:
                     print(prepped.method, prepped.url, file=sys.stderr)
@@ -427,34 +454,41 @@ class CloudStack(object):
                         print(file=sys.stderr)
 
                 with self.session as session:
-                    response = session.send(prepped,
-                                            timeout=timeout,
-                                            verify=self.verify,
-                                            cert=self.cert)
+                    response = session.send(
+                        prepped,
+                        timeout=timeout,
+                        verify=self.verify,
+                        cert=self.cert,
+                    )
 
                 j = self._response_value(response, json)
 
                 if self.trace:
-                    print(response.status_code, response.reason,
-                          file=sys.stderr)
+                    print(
+                        response.status_code, response.reason, file=sys.stderr
+                    )
                     headersTrace = "\n".join(
-                            "{}: {}".format(k, v)
-                            for k, v in response.headers.items())
+                        "{}: {}".format(k, v)
+                        for k, v in response.headers.items()
+                    )
                     print(headersTrace, "\n", file=sys.stderr)
                     print(response.text, "\n", file=sys.stderr)
 
                 failures = 0
-                if j['jobstatus'] != PENDING:
-                    if j['jobresultcode'] or j['jobstatus'] != SUCCESS:
-                        raise CloudStackApiException("Job failure",
-                                                     error=j['jobresult'],
-                                                     response=response)
+                if j["jobstatus"] != PENDING:
+                    if j["jobresultcode"] or j["jobstatus"] != SUCCESS:
+                        raise CloudStackApiException(
+                            "Job failure",
+                            error=j["jobresult"],
+                            response=response,
+                        )
 
-                    if 'jobresult' not in j:
-                        raise CloudStackException("Unknown job result",
-                                                  response=response)
+                    if "jobresult" not in j:
+                        raise CloudStackException(
+                            "Unknown job result", response=response
+                        )
 
-                    return j['jobresult']
+                    return j["jobresult"]
 
             except CloudStackException:
                 raise
@@ -470,9 +504,9 @@ class CloudStack(object):
         if response:
             response.status_code = 408
 
-        raise CloudStackException("Timeout waiting for async job result",
-                                  jobid,
-                                  response=response)
+        raise CloudStackException(
+            "Timeout waiting for async job result", jobid, response=response
+        )
 
     def _sign(self, data):
         """
@@ -487,31 +521,33 @@ class CloudStack(object):
         )
 
         digest = hmac.new(
-            self.secret.encode('utf-8'),
-            msg=params.lower().encode('utf-8'),
-            digestmod=hashlib.sha1).digest()
+            self.secret.encode("utf-8"),
+            msg=params.lower().encode("utf-8"),
+            digestmod=hashlib.sha1,
+        ).digest()
 
-        data['signature'] = base64.b64encode(digest).decode('utf-8').strip()
+        data["signature"] = base64.b64encode(digest).decode("utf-8").strip()
 
 
 def read_config_from_ini(ini_group=None):
     # Config file: $PWD/cloudstack.ini or $HOME/.cloudstack.ini
     # Last read wins in configparser
     paths = [
-        os.path.join(os.path.expanduser('~'), '.cloudstack.ini'),
-        os.path.join(os.getcwd(), 'cloudstack.ini'),
+        os.path.join(os.path.expanduser("~"), ".cloudstack.ini"),
+        os.path.join(os.getcwd(), "cloudstack.ini"),
     ]
     # Look at CLOUDSTACK_CONFIG first if present
-    if 'CLOUDSTACK_CONFIG' in os.environ:
-        paths.append(os.path.expanduser(os.environ['CLOUDSTACK_CONFIG']))
+    if "CLOUDSTACK_CONFIG" in os.environ:
+        paths.append(os.path.expanduser(os.environ["CLOUDSTACK_CONFIG"]))
     if not any([os.path.exists(c) for c in paths]):
-        raise SystemExit("Config file not found. Tried {0}".format(
-            ", ".join(paths)))
+        raise SystemExit(
+            "Config file not found. Tried {0}".format(", ".join(paths))
+        )
     conf = ConfigParser()
     conf.read(paths)
 
     if not ini_group:
-        ini_group = os.getenv('CLOUDSTACK_REGION', 'cloudstack')
+        ini_group = os.getenv("CLOUDSTACK_REGION", "cloudstack")
 
         if not conf.has_section(ini_group):
             return dict(name=None)
@@ -527,7 +563,8 @@ def read_config_from_ini(ini_group=None):
     for k in list(ini_config):
         if k.startswith("header_"):
             ini_config.setdefault("headers", {})
-            ini_config["headers"][k[len("header_"):]] = ini_config.pop(k)
+            start = len("header_")
+            ini_config["headers"][k[start:]] = ini_config.pop(k)
     return ini_config
 
 
@@ -546,24 +583,28 @@ def read_config(ini_group=None):
             env_conf[key] = value
 
     # overrides means we have a .ini to read
-    overrides = os.getenv('CLOUDSTACK_OVERRIDES', '').strip()
+    overrides = os.getenv("CLOUDSTACK_OVERRIDES", "").strip()
 
     if not overrides and set(env_conf).issuperset(REQUIRED_CONFIG_KEYS):
         return env_conf
 
     ini_conf = read_config_from_ini(ini_group)
 
-    overrides = {s.lower() for s in re.split(r'\W+', overrides)}
-    config = dict(dict(env_conf, **ini_conf),
-                  **{k: v for k, v in env_conf.items() if k in overrides})
+    overrides = {s.lower() for s in re.split(r"\W+", overrides)}
+    config = dict(
+        dict(env_conf, **ini_conf),
+        **{k: v for k, v in env_conf.items() if k in overrides},
+    )
 
     missings = REQUIRED_CONFIG_KEYS.difference(config)
     if missings:
-        raise ValueError("the configuration is missing the following keys: " +
-                         ", ".join(missings))
+        raise ValueError(
+            "the configuration is missing the following keys: "
+            + ", ".join(missings)
+        )
 
     # convert booleans values.
-    bool_keys = ('dangerous_no_tls_verify',)
+    bool_keys = ("dangerous_no_tls_verify",)
     for bool_key in bool_keys:
         if isinstance(config[bool_key], string_type):
             try:
