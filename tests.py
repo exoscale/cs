@@ -83,6 +83,7 @@ class ConfigTest(TestCase):
                     "verify": None,
                     "dangerous_no_tls_verify": False,
                     "cert": None,
+                    "cert_key": None,
                     "name": None,
                     "retry": 0,
                 },
@@ -112,6 +113,7 @@ class ConfigTest(TestCase):
                     "poll_interval": 2.0,
                     "verify": "/path/to/ca.pem",
                     "cert": "/path/to/cert.pem",
+                    "cert_key": None,
                     "dangerous_no_tls_verify": False,
                     "name": None,
                     "retry": "5",
@@ -158,6 +160,7 @@ class ConfigTest(TestCase):
                     "retry": 0,
                     "method": "get",
                     "cert": None,
+                    "cert_key": None,
                 },
                 conf,
             )
@@ -197,6 +200,7 @@ class ConfigTest(TestCase):
                     "retry": 0,
                     "method": "get",
                     "cert": None,
+                    "cert_key": None,
                     "headers": {
                         "x-custom-header1": "foo",
                         "x-custom-header2": "bar",
