@@ -1,10 +1,6 @@
 CS
 ==
 
-.. image:: https://travis-ci.org/exoscale/cs.svg?branch=master
-   :alt: Build Status
-   :target: https://travis-ci.org/exoscale/cs
-
 .. image:: https://img.shields.io/pypi/l/cs.svg
    :alt: License
    :target: https://pypi.org/project/cs/
