@@ -249,10 +249,10 @@ Release Procedure
 .. code-block:: shell-session
 
     mktmpenv -p /usr/bin/python3
-    pip install -U twine wheel
+    pip install -U twine wheel build
     cd exoscale/cs
     rm -rf build dist
-    python setup.py sdist bdist_wheel
+    python -m build
     twine upload dist/*
 
 Links
